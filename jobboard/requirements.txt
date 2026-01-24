@@ -2,3 +2,6 @@ django
 djangorestframework
 python-dotenv
 psycopg2
+djangorestframework_simplejwt
+pytest-django
+pytest
