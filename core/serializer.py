@@ -50,16 +50,20 @@ class LoginSerializer(serializers.ModelSerializer):
 
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=True, style={'input_type': 'password'})
-    password2 = serializers.CharField(write_only=True, required=True, style={'input_type': 'password'})
+    confirm_password = serializers.CharField(write_only=True, required=True, style={'input_type': 'password'})
+
+    class Meta:
+        model = User
+        fields = ['email', 'first_name', 'last_name', 'password', 'confirm_password']
 
     def validate(self, attrs):
-        if attrs['password'] != attrs['password2']:
+        if attrs['password'] != attrs['confirm_password']:
             raise serializers.ValidationError({'detail': 'Passwords do not match'}, code=400)
         return attrs
 
     def create(self, validated_data):
-        # pop password2 from validated_data
-        password = validated_data.pop('password2')
+        # pop confirm_password from validated_data
+        password = validated_data.pop('confirm_password')
         user = User(**validated_data)
         user.set_password(password) # hash password
         user.save()
