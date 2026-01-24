@@ -1,3 +1,4 @@
+from tokenize import blank_re
 from django.db import models
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.utils.translation import gettext_lazy as _
@@ -69,4 +70,50 @@ class User(AbstractUser):
     def is_admin(self):
         return self.role == self.Role.ADMIN
 
+
+class CandidateProfile(BaseModel):
+    class Gender(models.TextChoices):
+        MALE = 'MALE', _('Male')
+        FEMALE = 'FEMALE', _('Female')
+        OTHER = 'OTHER', _('Other')
+    
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='candidate')
+    phone = models.CharField(max_length=20)
+    gender = models.CharField(max_length=20, choices=Gender.choices, blank=True)
+    date_of_birth = models.DateField()
+    # Professional info
+    headline = models.CharField(max_length=255, blank=True, help_text='e.g Senior Software Engineer')
+    about = models.TextField(blank=True, help_text='Tell us about yourself')
+    # Social links
+    linkedin = models.URLField(blank=True, help_text='Your LinkedIn profile URL')
+    github = models.URLField(blank=True, help_text='Your GitHub profile URL')
+    twitter = models.URLField(blank=True, help_text='Your Twitter profile URL')
+    website = models.URLField(blank=True, help_text='Your website URL')
+    # Media links
+    profile_picture = models.ImageField(upload_to='profiles/pictures', blank=True, null=True)
+    resume = models.FileField(upload_to='profiles/resumes', blank=True, null=True)     
+
+    class Meta:
+        verbose_name = _('Candidate Profile')
+        verbose_name_plural = _('Candidate Profiles')
+
+    def __str__(self):
+        return f"{self.user.get_full_name()} - {self.headline}"
+
+
+class Address(BaseModel):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='address')
+    street = models.CharField(max_length=255)
+    city = models.CharField(max_length=255)
+    state = models.CharField(max_length=255)
+    country = models.CharField(max_length=255)
+    postal_code = models.CharField(max_length=20)
+
+    class Meta:
+        verbose_name = _('Address')
+        verbose_name_plural = _('Addresses')
+
+    def __str__(self):
+        return f"{self.user.get_full_name()} - {self.city}, {self.state}, {self.country}"
+        
 

@@ -45,6 +45,5 @@ def test_register_endpoint():
         'role': 'CANDIDATE'
     }
     response = client.post(url, data, format='json')
-    print(response.data)
 
     assert response.status_code == 201
