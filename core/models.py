@@ -115,5 +115,72 @@ class Address(BaseModel):
 
     def __str__(self):
         return f"{self.user.get_full_name()} - {self.city}, {self.state}, {self.country}"
-        
 
+
+class Education(BaseModel):
+    class Level(models.TextChoices):
+        HIGH_SCHOOL = 'HIGH_SCHOOL', _('High School')
+        ASSOCIATE = 'ASSOCIATE', _('Associate Degree')
+        BACHELOR = 'BACHELOR', _('Bachelor\'s Degree')
+        MASTER = 'MASTER', _('Master\'s Degree')
+        PHD = 'PHD', _('PhD')
+        CERTIFICATE = 'CERTIFICATE', _('Certificate')
+        DIPLOMA = 'DIPLOMA', _('Diploma')
+    
+    candidate = models.ForeignKey(CandidateProfile, on_delete=models.CASCADE, related_name='education')
+    level = models.CharField(max_length=20, choices=Level.choices, default=Level.HIGH_SCHOOL)
+    field_of_study = models.CharField(max_length=255)
+    institution = models.CharField(max_length=100)
+    start_date = models.DateField()
+    end_date = models.DateField(null=True, blank=True)
+    description = models.TextField(blank=True)
+
+
+    class Meta:
+        verbose_name = _('Education')
+        verbose_name_plural = _('Educations')
+
+    def __str__(self):
+        return f"{self.level} in {self.field_of_study} - {self.institution}"    
+
+
+class Skills(BaseModel):
+    name = models.CharField(max_length=255)
+    category = models.CharField(max_length=100, blank=True)
+    description = models.TextField(blank=True)
+
+    class Meta:
+        verbose_name = _('Skill')
+        verbose_name_plural = _('Skills')
+
+    def __str__(self):
+        return self.name    
+
+
+class CandidateSkill(BaseModel):
+    candidate = models.ForeignKey(CandidateProfile, on_delete=models.CASCADE, related_name='candidate_skills')
+    skill = models.ForeignKey(Skills, on_delete=models.CASCADE, related_name='candidate_skills')
+
+    class Meta:
+        verbose_name = _('Candidate Skill')
+        verbose_name_plural = _('Candidate Skills')
+
+    def __str__(self):
+        return f"{self.candidate.user.get_full_name()} - {self.skill.name}"
+
+
+class Certification(BaseModel):
+    candidate = models.ForeignKey(CandidateProfile, on_delete=models.CASCADE, related_name='certifications')
+    name = models.CharField(max_length=255)
+    issuing_organization = models.CharField(max_length=100)
+    issue_date = models.DateField()
+    expiry_date = models.DateField(null=True, blank=True)
+    credential_url = models.URLField(blank=True)
+    credential_id = models.CharField(max_length=255, blank=True)
+
+    class Meta:
+        verbose_name = _('Certification')
+        verbose_name_plural = _('Certifications')
+
+    def __str__(self):
+        return f"{self.name} - {self.issuing_organization}"
