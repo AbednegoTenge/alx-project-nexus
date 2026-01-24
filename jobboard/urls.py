@@ -20,6 +20,6 @@ from core.views import AuthViewSet
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('api/auth/login/', AuthViewSet.as_view({'post': 'login'})),
-    path('api/auth/register/', AuthViewSet.as_view({'post': 'register'})),
+    path('api/auth/login/', AuthViewSet.as_view({'post': 'login'}), name='login'),
+    path('api/auth/register/', AuthViewSet.as_view({'post': 'register'}), name='register'),
 ]
