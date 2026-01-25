@@ -12,7 +12,7 @@ class DashboardService:
     @staticmethod
     def get_candidate_dashboard(user):
         """Return candidate dashboard data"""
-        from .models import Application, Notification, SavedJob, CandidateSkill
+        from .models import Application, Notification, SavedJob, CandidateSkill, Education, Certification
         from django.core.exceptions import ObjectDoesNotExist
         
         try:
@@ -39,43 +39,37 @@ class DashboardService:
         }
         
         # Recent Activity (Last 5 applications)
-        recent_applications = applications.select_related('job', 'job__employer').order_by('-applied_at')[:5]
-        recent_apps_data = []
-        for app in recent_applications:
-            recent_apps_data.append({
-                'id': app.id,
-                'job_title': app.job.title,
-                'company': app.job.employer.company_name,
-                'applied_at': app.applied_at,
-                'status': app.status,
-                'status_display': app.get_status_display(),
-                'logo_url': app.job.employer.logo.url if app.job.employer.logo else None
-            })
+        recent_apps_data = list(
+            applications.select_related('job', 'job__employer')
+            .order_by('-applied_at')[:5]
+            .values(
+                'id', 'job__title', 'job__employer__company_name', 'applied_at', 'status', 'job__employer__logo'
+            )
+        )
 
         # Skills
         skills = CandidateSkill.objects.filter(candidate=profile).select_related('skill')
-        skills_data = []
-        for skill in skills:
-            skills_data.append({
-                'id': skill.id,
-                'name': skill.skill.name,
-                'category': skill.skill.category,
-                'description': skill.skill.description,
-            })
+        skills_data = list(skills.values(
+            'id', 'skill__name', 'skill__category', 'skill__description'
+        ))
+
+        # Education
+        education_data = list(Education.objects.filter(candidate=profile).values(
+            'id', 'institution', 'level', 'field_of_study', 'start_date', 'end_date',
+        ))
+
+        # Certifications
+        certifications_data = list(Certification.objects.filter(candidate=profile).values(
+            'id', 'name', 'issuing_organization', 'issue_date', 'expiry_date'
+        ))
 
         # Notifications (User based, so works without profile)
         notifications = Notification.objects.filter(user=user).order_by('-created_at')
         unread_count = notifications.filter(is_read=False).count()
         recent_notifications = notifications[:5]
-        notifications_data = []
-        for notif in recent_notifications:
-            notifications_data.append({
-                'id': notif.id,
-                'title': notif.title,
-                'type': notif.notification_type,
-                'created_at': notif.created_at,
-                'is_read': notif.is_read
-            })
+        notifications_data = list(recent_notifications.values(
+            'id', 'title', 'notification_type', 'created_at', 'is_read'
+        ))
 
         # Saved Jobs
         if profile:
@@ -86,16 +80,9 @@ class DashboardService:
             saved_jobs = []
             saved_jobs_count = 0
 
-        saved_jobs_data = []
-        for saved in saved_jobs:
-            saved_jobs_data.append({
-                'id': saved.id,
-                'job_title': saved.job.title,
-                'company': saved.job.employer.company_name,
-                'saved_at': saved.created_at,
-                'job_id': saved.job.id,
-                'logo_url': saved.job.employer.logo.url if saved.job.employer.logo else None
-            })
+        saved_jobs_data = list(saved_jobs.values(
+            'id', 'job__title', 'job__employer__company_name', 'created_at', 'job__employer__logo'
+        ))
 
         return {
             "status": "active",
@@ -108,13 +95,17 @@ class DashboardService:
                 "date_of_birth": profile.date_of_birth,
                 "headline": profile.headline if profile else "",
                 "about": profile.about,
-                "linkedin": profile.linkedin,
-                "github": profile.github,
-                "twitter": profile.twitter,
-                "website": profile.website,
+                "social_links": {
+                    "linkedin": profile.linkedin,
+                    "github": profile.github,
+                    "twitter": profile.twitter,
+                    "website": profile.website,
+                },
                 "resume": profile.resume if profile.resume else None,
+                "skills": skills_data,
+                "education": education_data,
+                "certifications": certifications_data,
             },
-            "skills": skills_data,
             "stats": {
                 "applications": status_counts,
                 "notifications": {
