@@ -3,7 +3,6 @@ from rest_framework.decorators import action
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
-from .models import User
 from .serializer import LoginSerializer, RegisterSerializer, TokenRefreshResponseSerializer, UserSerializer
 from .services import DashboardService
 
@@ -34,13 +33,19 @@ class AuthViewSet(ModelViewSet):
         user = serializer.validated_data['user']
         access_token = serializer.validated_data['access']
         refresh_token = serializer.validated_data['refresh']
-        dashboard = DashboardService.get_dashboard(user)
-        print(dashboard)
         return Response({
             'user': UserSerializer(user).data,
             'access': access_token,
             'refresh': refresh_token,
-            'dashboard': dashboard,
+        }, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=['get'])
+    def me(self, request):
+        user = request.user
+        dashboard = DashboardService.get_dashboard(user)
+        return Response({
+            'user': UserSerializer(user).data,
+            'dashboard': dashboard
         }, status=status.HTTP_200_OK)
 
     @action(detail=False, methods=['post'])

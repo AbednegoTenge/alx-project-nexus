@@ -6,27 +6,25 @@ class DashboardService:
     def get_dashboard(user):
         """Return role based dashboard data"""
         if user.is_candidate:
-            print(user.is_candidate)
             return DashboardService.get_candidate_dashboard(user)
         
 
     @staticmethod
     def get_candidate_dashboard(user):
         """Return candidate dashboard data"""
-        from .models import Application, Notification, SavedJob
+        from .models import Application, Notification, SavedJob, CandidateSkill
         from django.core.exceptions import ObjectDoesNotExist
         
         try:
             profile = user.candidate
         except ObjectDoesNotExist:
-            profile = None
+            return {
+                'status': 'error',
+                'message': 'Candidate profile not found'
+            }
             
         # Application Stats
-        if profile:
-            applications = Application.objects.filter(candidate=profile)
-        else:
-            applications = Application.objects.none()
-            
+        applications = Application.objects.filter(candidate=profile)
         total_applications = applications.count()
         
         # Status Breakdown
@@ -52,6 +50,17 @@ class DashboardService:
                 'status': app.status,
                 'status_display': app.get_status_display(),
                 'logo_url': app.job.employer.logo.url if app.job.employer.logo else None
+            })
+
+        # Skills
+        skills = CandidateSkill.objects.filter(candidate=profile).select_related('skill')
+        skills_data = []
+        for skill in skills:
+            skills_data.append({
+                'id': skill.id,
+                'name': skill.skill.name,
+                'category': skill.skill.category,
+                'description': skill.skill.description,
             })
 
         # Notifications (User based, so works without profile)
@@ -91,11 +100,21 @@ class DashboardService:
         return {
             "status": "active",
             "profile": {
+                "picture": profile.profile_picture if profile.profile_picture else None,
                 "name": user.get_full_name(),
+                "email": user.email,
+                "phone": profile.phone,
+                "gender": profile.gender,
+                "date_of_birth": profile.date_of_birth,
                 "headline": profile.headline if profile else "",
-                "avatar": profile.profile_picture.url if profile and profile.profile_picture else None,
-                "completeness": 85 if profile else 10, # 10% just for account creation
+                "about": profile.about,
+                "linkedin": profile.linkedin,
+                "github": profile.github,
+                "twitter": profile.twitter,
+                "website": profile.website,
+                "resume": profile.resume if profile.resume else None,
             },
+            "skills": skills_data,
             "stats": {
                 "applications": status_counts,
                 "notifications": {

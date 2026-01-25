@@ -22,4 +22,5 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/auth/login/', AuthViewSet.as_view({'post': 'login'}), name='login'),
     path('api/auth/register/', AuthViewSet.as_view({'post': 'register'}), name='register'),
+    path('api/auth/me/', AuthViewSet.as_view({'get': 'me'}), name='me'),
 ]
