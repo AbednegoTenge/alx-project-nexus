@@ -14,9 +14,10 @@ Base URL: `http://localhost:2000/api/`
 {
   "email": "user@example.com",
   "password": "securepassword123",
+  "confirm_password": "securepassword123",
   "first_name": "John",
   "last_name": "Doe",
-  "user_type": "candidate" // or "employer"
+  "role": "CANDIDATE" // or "EMPLOYER"
 }
 ```
 
@@ -26,10 +27,23 @@ Base URL: `http://localhost:2000/api/`
   "user": {
     "id": 1,
     "email": "user@example.com",
-    "first_name": "John",
-    "last_name": "Doe",
-    "user_type": "candidate"
+    "role": "CANDIDATE"
   }
+}
+```
+
+**Error Responses:**
+- `400 BAD REQUEST` - If passwords don't match
+```json
+{
+  "detail": "Passwords do not match"
+}
+```
+
+- `400 BAD REQUEST` - If email already exists
+```json
+{
+  "email": ["user with this email already exists."]
 }
 ```
 
@@ -54,15 +68,28 @@ Base URL: `http://localhost:2000/api/`
   "user": {
     "id": 1,
     "email": "user@example.com",
-    "first_name": "John",
-    "last_name": "Doe",
-    "user_type": "candidate"
+    "role": "CANDIDATE"
   },
   "access": "eyJ0eXAiOiJKV1QiLCJhbGc...",
   "refresh": "eyJ0eXAiOiJKV1QiLCJhbGc...",
   "dashboard": {
     // Dashboard data from DashboardService
   }
+}
+```
+
+**Error Responses:**
+- `400 BAD REQUEST` - If credentials are invalid
+```json
+{
+  "detail": "Invalid credentials"
+}
+```
+
+- `400 BAD REQUEST` - If user account is inactive
+```json
+{
+  "detail": "User is not active"
 }
 ```
 
@@ -84,9 +111,7 @@ Authorization: Bearer <access_token>
   "user": {
     "id": 1,
     "email": "user@example.com",
-    "first_name": "John",
-    "last_name": "Doe",
-    "user_type": "candidate"
+    "role": "CANDIDATE"
   },
   "dashboard": {
     // Dashboard data
@@ -133,27 +158,36 @@ Authorization: Bearer <access_token>
   {
     "id": 1,
     "title": "Senior Software Engineer",
-    "description": "We are looking for...",
     "status": "ACTIVE",
+    "description": "We are looking for...",
+    "requirements": [
+      "3+ years Python experience",
+      "Django knowledge"
+    ],
     "responsibilities": [
       "Design and develop web applications",
       "Write clean code",
       "Collaborate with team"
     ],
-    "requirements": [
-      "3+ years Python experience",
-      "Django knowledge"
-    ],
     "nice_to_have": [
       "React experience"
     ],
+    "job_type": "FULL_TIME",
+    "experience_level": "SENIOR",
+    "salary_min": 80000.00,
+    "salary_max": 120000.00,
     "benefits": [
       "Health insurance",
       "Remote work"
     ],
+    "is_remote": true,
+    "is_hybrid": false,
+    "city": "San Francisco",
+    "country": "USA",
+    "applications_count": 15,
+    "application_deadline": "2026-02-28T23:59:59Z",
     "created_at": "2026-01-27T10:00:00Z",
     "updated_at": "2026-01-27T10:00:00Z"
-    // ... all other fields from GetJobSerializer
   }
 ]
 ```
@@ -181,23 +215,37 @@ Authorization: Bearer <access_token>
 {
   "id": 1,
   "title": "Senior Software Engineer",
-  "description": "We are looking for...",
   "status": "ACTIVE",
-  "responsibilities": [
-    "Design and develop web applications"
-  ],
+  "description": "We are looking for...",
   "requirements": [
-    "3+ years Python experience"
+    "3+ years Python experience",
+    "Django knowledge"
+  ],
+  "responsibilities": [
+    "Design and develop web applications",
+    "Write clean code"
   ],
   "nice_to_have": [
-    "React experience"
+    "React experience",
+    "AWS knowledge"
   ],
+  "job_type": "FULL_TIME",
+  "experience_level": "SENIOR",
+  "salary_min": 80000.00,
+  "salary_max": 120000.00,
   "benefits": [
-    "Health insurance"
+    "Health insurance",
+    "Remote work",
+    "401k matching"
   ],
+  "is_remote": true,
+  "is_hybrid": false,
+  "city": "San Francisco",
+  "country": "USA",
+  "applications_count": 15,
+  "application_deadline": "2026-02-28T23:59:59Z",
   "created_at": "2026-01-27T10:00:00Z",
   "updated_at": "2026-01-27T10:00:00Z"
-  // ... all other fields
 }
 ```
 
@@ -220,11 +268,15 @@ Content-Type: application/json
   "title": "Senior Software Engineer",
   "description": "We are looking for a talented developer...",
   "status": "ACTIVE",
-  "employment_type": "FULL_TIME",
+  "job_type": "FULL_TIME",
   "experience_level": "SENIOR",
-  "location": "Remote",
   "salary_min": 80000,
   "salary_max": 120000,
+  "is_remote": true,
+  "is_hybrid": false,
+  "city": "San Francisco",
+  "country": "USA",
+  "application_deadline": "2026-02-28T23:59:59Z",
   "responsibilities": [
     "Design and develop web applications",
     "Write clean, maintainable code"
@@ -250,7 +302,18 @@ Content-Type: application/json
 {
   "id": 1,
   "title": "Senior Software Engineer",
-  // ... all fields
+  "description": "We are looking for a talented developer...",
+  "status": "ACTIVE",
+  "created_at": "2026-01-27T10:00:00Z",
+  "updated_at": "2026-01-27T10:00:00Z"
+}
+```
+
+**Error Response:**
+- `400 BAD REQUEST` - If user is not an employer
+```json
+{
+  "non_field_errors": ["Only employers can create job postings"]
 }
 ```
 
@@ -282,9 +345,10 @@ Content-Type: application/json
 {
   "id": 1,
   "title": "Senior Software Engineer",
-  "status": "CLOSED",
   "description": "Updated description",
-  // ... all other fields
+  "status": "CLOSED",
+  "created_at": "2026-01-27T10:00:00Z",
+  "updated_at": "2026-01-27T12:00:00Z"
 }
 ```
 
@@ -348,9 +412,9 @@ Content-Type: multipart/form-data
 ```
 cover_letter: "I am very interested in this position..."
 resume: <file>
-expected_salary: 100000
-available_from: "2026-02-01"
 ```
+
+**Note:** The `job` and `candidate` fields are automatically set from context, not from request data.
 
 **Response:** `201 CREATED`
 ```json
@@ -372,7 +436,7 @@ available_from: "2026-02-01"
 - `400 BAD REQUEST` - If job is not accepting applications
 ```json
 {
-  "non_field_errors": ["This job is no more accepting applications"]
+  "non_field_errors": ["This job is no more acepting applications"]
 }
 ```
 
@@ -380,6 +444,13 @@ available_from: "2026-02-01"
 ```json
 {
   "non_field_errors": ["You have already applied for this job"]
+}
+```
+
+- `400 BAD REQUEST` - If not authenticated or not a candidate
+```json
+{
+  "detail": "Authentication credentials were not provided."
 }
 ```
 
@@ -471,7 +542,13 @@ available_from: "2026-02-01"
 
 - All timestamps are in ISO 8601 format (UTC)
 - File uploads use `multipart/form-data` encoding
-- JSON fields (responsibilities, requirements, etc.) accept arrays
-- Job status options: `ACTIVE`, `CLOSED`, `DRAFT`, `ARCHIVED`
-- User types: `candidate`, `employer`
+- JSON fields (responsibilities, requirements, nice_to_have, benefits) accept arrays of strings
+- Job status options: `ACTIVE`, `CLOSED`, `DRAFT`, etc. (check JobPosting.Status enum)
+- Job type options: `FULL_TIME`, `PART_TIME`, `CONTRACT`, `INTERNSHIP`
+- Experience level options: `ENTRY`, `JUNIOR`, `SENIOR`, `LEAD`, `MANAGER`
+- User roles: `CANDIDATE`, `EMPLOYER`
 - Application status: `PENDING`, `REVIEWED`, `SHORTLISTED`, `INTERVIEW`, `REJECTED`, `ACCEPTED`, `WITHDRAWN`
+- Password validation: Passwords must match in registration
+- Only employers can create job postings
+- Only candidates can apply to jobs
+- Users cannot apply to the same job twice
