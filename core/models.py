@@ -294,10 +294,10 @@ class JobPosting(BaseModel):
     # Job Details
     title = models.CharField(max_length=200)
     description = models.TextField()
-    responsibilities = models.TextField(blank=True)
-    requirements = models.TextField(blank=True)
-    nice_to_have = models.TextField(blank=True)
-    benefits = models.TextField(blank=True)
+    responsibilities = models.JSONField(default=list, blank=True)
+    requirements = models.JSONField(default=list, blank=True)
+    nice_to_have = models.JSONField(default=list, blank=True)
+    benefits = models.JSONField(default=list, blank=True)
     
     # Job Type
     job_type = models.CharField(max_length=20, choices=JobType.choices)

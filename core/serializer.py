@@ -75,26 +75,61 @@ class TokenRefreshResponseSerializer(serializers.Serializer):
     refresh = serializers.CharField()
 
 
-class ApplyJObSerializer(serializers.ModelSerializer):
+class ApplyJobSerializer(serializers.ModelSerializer):
+    resume = serializers.FileField(required=False)
     class Meta:
         model = Application
-        fields = ['id', 'job_posting', 'candidate', 'cover_letter', 'resume']
+        fields = ['id', 'job', 'candidate', 'cover_letter', 'resume']
 
     def validate(self, attrs):
         request = self.context.get('request')
-        job_posting = self.context.get('job_posting')
+        job = self.context.get('job')
 
         if not request.user.is_candidate:
             raise serializers.ValidationError("Only candidates can apply for job")
         
-        if job_posting.status != JobPosting.status.ACTIVE or not job_posting.is_active:
+        if job.status != JobPosting.Status.ACTIVE or not job.is_active:
             raise serializers.ValidationError("This job is no more acepting applications")
 
         # Prevents application duplicates
         if Application.objects.filter(
-            job=job_posting,
+            job=job,
             candidate=request.user.candidate
         ).exists():
             raise serializers.ValidationError("You have already applied for this job")
 
         return attrs
+
+    def create(self, validated_data):
+        request = self.context.get('request')
+        job = self.context.get('job')
+
+        return Application.objects.create(
+            job=job,
+            candidate=request.user.candidate,
+            **validated_data
+        )
+
+class JobPostingSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = JobPosting
+        fields = ['id', 'title', 'description', 'status', 'created_at', 'updated_at']
+
+    def validate(self, attrs):
+        request = self.context.get('request')
+        if not request.user.is_employer:
+            raise serializers.ValidationError("Only employers can create job postings")
+        return attrs
+
+    def create(self, validated_data):
+        return JobPosting.objects.create(**validated_data)
+
+class GetJobSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = JobPosting
+        fields = [
+            'id', 'title', 'status', 'description', 
+            'requirements', 'responsibilities', 'nice_to_have', 'job_type', 
+            'experience_level', 'salary_min', 'salary_max', 'benefits', 'is_remote', 
+            'is_hybrid', 'city', 'country', 'applications_count', 'application_deadline', 'created_at', 'updated_at'
+            ]
