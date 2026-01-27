@@ -7,6 +7,13 @@ class DashboardService:
         """Return role based dashboard data"""
         if user.is_candidate:
             return DashboardService.get_candidate_dashboard(user)
+        elif user.is_employer:
+            return DashboardService.get_employer_dashboard(user)
+        else:
+            return {
+                "status": "error",
+                "message": "User role not recognized"
+            }
         
 
     @staticmethod
@@ -119,4 +126,23 @@ class DashboardService:
             "saved_jobs": saved_jobs_data
         }    
         
+
+
+    def get_employer_dashboard(user):
+        from .models import Application, Notification
+        from django.core.exceptions import ObjectDoesNotExist
+
+        try:
+            profile = user.employer_profile
+        except ObjectDoesNotExist:
+            return {
+                "status": "error",
+                "message": "Employer profile not found"
+            }
+
+        applications = Application.objects.filter(job__employer=profile)
+        applicaton_data = list(applications.values(
+            "id", "job__title", "job__employer__company_name", "applied_at", "status", "job__employer__logo"
+        ))
+
     

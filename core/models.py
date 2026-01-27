@@ -229,7 +229,7 @@ class EmployerProfile(BaseModel):
         verbose_name_plural = 'Employer Profiles'
 
     def __str__(self):
-        return self.company_name
+        return f"{self.user.get_full_name()} - {self.company_name}"
 
 
 # ==================== JOB MODELS ====================
@@ -289,7 +289,7 @@ class JobPosting(BaseModel):
         on_delete=models.CASCADE, 
         related_name='job_postings'
     )
-    posted_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='posted_jobs')
+    posted_by = models.ForeignKey(EmployerProfile, on_delete=models.SET_NULL, null=True, related_name='posted_jobs')
     
     # Job Details
     title = models.CharField(max_length=200)
@@ -374,6 +374,8 @@ class JobPosting(BaseModel):
             if self.salary_max < self.salary_min:
                 raise ValidationError("Maximum salary cannot be less than minimum salary.")
 
+    def __str__(self):
+        return f"{self.title} - {self.employer.company_name}"
 
 class JobSkill(BaseModel):
     job = models.ForeignKey(JobPosting, on_delete=models.CASCADE, related_name='job_skills')

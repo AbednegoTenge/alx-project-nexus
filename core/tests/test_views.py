@@ -57,10 +57,14 @@ def test_me_endpoint_authenticated():
     user = User.objects.create_user(email='me@example.com', password='password', role='CANDIDATE')
     
     # Create profile and data
+    # Create profile and data
     employer_user = User.objects.create_user(email='emp@example.com', password='password', role='EMPLOYER')
-    employer_profile = EmployerProfile.objects.create(user=employer_user, company_name='Co')
+    employer_profile = employer_user.employer_profile
+    employer_profile.company_name = 'Co'
+    employer_profile.save()
+    
     job = JobPosting.objects.create(employer=employer_profile, title='Job', description='Desc', salary_min=10, salary_max=20)
-    profile = CandidateProfile.objects.create(user=user)
+    profile = user.candidate
     Application.objects.create(candidate=profile, job=job)
 
     client.force_authenticate(user=user)

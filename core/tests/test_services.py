@@ -8,11 +8,16 @@ class TestDashboardService:
     def test_get_candidate_dashboard_structure(self):
         # Setup User
         user = User.objects.create_user(email='candidate@example.com', password='password', role='CANDIDATE', first_name='John', last_name='Doe')
-        profile = CandidateProfile.objects.create(user=user, headline="Dev", phone="123")
+        profile = user.candidate
+        profile.headline = "Dev"
+        profile.phone = "123"
+        profile.save()
         
         # Setup Employer & Job
         employer_user = User.objects.create_user(email='employer@example.com', password='password', role='EMPLOYER')
-        employer_profile = EmployerProfile.objects.create(user=employer_user, company_name='Tech Corp')
+        employer_profile = employer_user.employer_profile
+        employer_profile.company_name = 'Tech Corp'
+        employer_profile.save()
         job1 = JobPosting.objects.create(
             employer=employer_profile, 
             title='Software Engineer', 

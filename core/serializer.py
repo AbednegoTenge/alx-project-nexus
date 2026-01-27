@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
-from .models import User
+from .models import User, Application, JobPosting
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -54,7 +54,7 @@ class RegisterSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['email', 'first_name', 'last_name', 'password', 'confirm_password']
+        fields = ['email', 'first_name', 'last_name', 'password', 'confirm_password', 'role']
 
     def validate(self, attrs):
         if attrs['password'] != attrs['confirm_password']:
@@ -73,3 +73,28 @@ class RegisterSerializer(serializers.ModelSerializer):
 class TokenRefreshResponseSerializer(serializers.Serializer):
     access = serializers.CharField()
     refresh = serializers.CharField()
+
+
+class ApplyJObSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Application
+        fields = ['id', 'job_posting', 'candidate', 'cover_letter', 'resume']
+
+    def validate(self, attrs):
+        request = self.context.get('request')
+        job_posting = self.context.get('job_posting')
+
+        if not request.user.is_candidate:
+            raise serializers.ValidationError("Only candidates can apply for job")
+        
+        if job_posting.status != JobPosting.status.ACTIVE or not job_posting.is_active:
+            raise serializers.ValidationError("This job is no more acepting applications")
+
+        # Prevents application duplicates
+        if Application.objects.filter(
+            job=job_posting,
+            candidate=request.user.candidate
+        ).exists():
+            raise serializers.ValidationError("You have already applied for this job")
+
+        return attrs
