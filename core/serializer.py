@@ -128,15 +128,12 @@ class ApplyJobSerializer(serializers.ModelSerializer):
 class JobPostingSerializer(serializers.ModelSerializer):
     class Meta:
         model = JobPosting
-        fields = ['id', 'title', 'description', 'experience_level', 'job_type', 'status', 'created_at', 'updated_at']
+        fields = ['id', 'title', 'description', 'requirements', 'responsibilities', 'experience_level', 'employment_type', 'status', 'job_type', 'created_at', 'updated_at']
 
     def validate(self, attrs):
         request = self.context.get('request')
-        employer_profile = request.user.is_employer
-        if not employer_profile:
+        if not hasattr(request.user, 'employer_profile'):
             raise serializers.ValidationError("Only employers can create job postings")
-        if not employer_profile.is_verified:
-            raise serializers.ValidationError("Please activate your profile before creating a job posting")
 
         # validate job title
         title = attrs.get('title')
@@ -161,6 +158,9 @@ class JobPostingSerializer(serializers.ModelSerializer):
         return attrs
 
     def create(self, validated_data):
+        request = self.context.get('request')
+        validated_data['employer'] = request.user.employer_profile
+        validated_data['posted_by'] = request.user.employer_profile
         return JobPosting.objects.create(**validated_data)
 
 class GetJobSerializer(serializers.ModelSerializer):
@@ -169,6 +169,6 @@ class GetJobSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'title', 'status', 'description', 
             'requirements', 'responsibilities', 'nice_to_have', 'job_type', 
-            'experience_level', 'salary_min', 'salary_max', 'benefits', 'is_remote', 
-            'is_hybrid', 'city', 'country', 'applications_count', 'application_deadline', 'created_at', 'updated_at'
+            'employment_type', 'experience_level', 'salary_min', 'salary_max', 'benefits', 
+            'city', 'country', 'applications_count', 'application_deadline', 'created_at', 'updated_at'
             ]

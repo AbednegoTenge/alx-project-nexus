@@ -1,3 +1,8 @@
+from django.db.models import Count, Avg
+from django.utils import timezone
+from django.utils.timezone import timedelta
+from django.db.models import Q
+
 
 class DashboardService:
     """Service class for handling dashboard data"""
@@ -19,7 +24,11 @@ class DashboardService:
     @staticmethod
     def get_candidate_dashboard(user):
         """Return candidate dashboard data"""
-        from .models import Application, Notification, SavedJob, CandidateSkill, Education, Certification
+        from .models import (
+            Application, Notification, SavedJob, 
+            CandidateSkill, Education, Certification,
+            Address
+        )
         from django.core.exceptions import ObjectDoesNotExist
         
         try:
@@ -78,6 +87,11 @@ class DashboardService:
             'id', 'title', 'notification_type', 'created_at', 'is_read'
         ))
 
+        address = Address.objects.filter(user=user)
+        address_data = list(address.values(
+            'id', 'street', 'city', 'state', 'postal_code', 'country'
+        ))
+
         # Saved Jobs
         if profile:
             saved_job_qs = SavedJob.objects.filter(candidate=profile)
@@ -112,6 +126,7 @@ class DashboardService:
                 "skills": skills_data,
                 "education": education_data,
                 "certifications": certifications_data,
+                "address": address_data,
             },
             "stats": {
                 "applications": status_counts,
@@ -127,22 +142,112 @@ class DashboardService:
         }    
         
 
-
     def get_employer_dashboard(user):
-        from .models import Application, Notification
-        from django.core.exceptions import ObjectDoesNotExist
-
+        """Dashboard data for employers"""
+        from .models import EmployerProfile, JobPosting, Application, CompanyReview
+        
         try:
             profile = user.employer_profile
-        except ObjectDoesNotExist:
+        except EmployerProfile.DoesNotExist:
             return {
-                "status": "error",
-                "message": "Employer profile not found"
+                'profile_exists': False,
+                'message': 'Please complete your company profile to get started'
             }
-
-        applications = Application.objects.filter(job__employer=profile)
-        applicaton_data = list(applications.values(
-            "id", "job__title", "job__employer__company_name", "applied_at", "status", "job__employer__logo"
-        ))
-
-    
+        
+        # Get all jobs posted by this employer
+        jobs = JobPosting.objects.filter(employer=profile, is_active=True)
+        
+        # Active jobs
+        active_jobs = jobs.filter(status='ACTIVE')
+        
+        # All applications for this employer's jobs
+        all_applications = Application.objects.filter(
+            job__employer=profile,
+            is_active=True
+        )
+        
+        # Recent applications (last 10)
+        recent_applications = all_applications.select_related(
+            'candidate__user', 
+            'job'
+        ).order_by('-applied_at')[:10]
+        
+        # Applications by status
+        applications_by_status = all_applications.values('status').annotate(count=Count('id'))
+        
+        # Top performing jobs (by applications)
+        top_jobs = active_jobs.annotate(
+            app_count=Count('applications', filter=Q(applications__is_active=True))
+        ).order_by('-app_count')[:5]
+        
+        # Jobs expiring soon (within 7 days)
+        expiring_soon = active_jobs.filter(
+            application_deadline__lte=timezone.now() + timedelta(days=7),
+            application_deadline__gte=timezone.now()
+        ).count()
+        
+        # Recent notifications
+        from .models import Notification
+        unread_notifications = Notification.objects.filter(
+            user=user,
+            is_read=False,
+            is_active=True
+        ).count()
+        
+        # Company reviews
+        reviews = CompanyReview.objects.filter(company=profile, is_active=True)
+        avg_rating = reviews.aggregate(avg=Avg('rating'))['avg'] or 0
+        
+        return {
+            'profile_exists': True,
+            'company': {
+                'id': profile.id,
+                'company_name': profile.company_name,
+                'logo': profile.logo.url if profile.logo else None,
+                'industry': profile.industry or '',
+                'is_verified': profile.is_verified,
+                'city': profile.city or '',
+                'country': profile.country or '',
+            },
+            'statistics': {
+                'total_jobs': jobs.count(),
+                'active_jobs': active_jobs.count(),
+                'draft_jobs': jobs.filter(status='DRAFT').count(),
+                'closed_jobs': jobs.filter(status='CLOSED').count(),
+                'total_applications': all_applications.count(),
+                'pending_applications': all_applications.filter(status='PENDING').count(),
+                'shortlisted_candidates': all_applications.filter(status='SHORTLISTED').count(),
+                'jobs_expiring_soon': expiring_soon,
+                'unread_notifications': unread_notifications,
+                'average_rating': round(float(avg_rating), 1),
+                'total_reviews': reviews.count(),
+            },
+            'applications_by_status': {
+                item['status']: item['count'] 
+                for item in applications_by_status
+            },
+            'recent_applications': [
+                {
+                    'id': app.id,
+                    'candidate_name': app.candidate.user.get_full_name(),
+                    'candidate_headline': app.candidate.headline or '',
+                    'candidate_picture': app.candidate.profile_picture.url if app.candidate.profile_picture else None,
+                    'job_title': app.job.title,
+                    'status': app.status,
+                    'applied_at': app.applied_at.isoformat() if app.applied_at else None,
+                    'expected_salary': float(app.expected_salary) if app.expected_salary else None,
+                }
+                for app in recent_applications
+            ],
+            'top_performing_jobs': [
+                {
+                    'id': job.id,
+                    'title': job.title,
+                    'applications_count': job.app_count,
+                    'location': job.location or '',
+                    'posted_at': job.posted_at.isoformat() if job.posted_at else None,
+                    'status': job.status,
+                }
+                for job in top_jobs
+            ],
+        }

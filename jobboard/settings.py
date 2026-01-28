@@ -28,7 +28,11 @@ SECRET_KEY = os.getenv('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DEBUG', 'False')
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    'localhost',
+    'triste-revealable-sandra.ngrok-free.dev',
+    '[IP_ADDRESS]',
+]
 
 
 # Application definition
@@ -43,9 +47,11 @@ INSTALLED_APPS = [
     'core.apps.CoreConfig',
     'rest_framework',
     'rest_framework_simplejwt',
+    'corsheaders',
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -83,6 +89,9 @@ REST_FRAMEWORK = {
         'rest_framework.permissions.AllowAny',
     ],
 }
+
+# CORS Settings
+CORS_ALLOW_ALL_ORIGINS = True
 
 # JWT Settings
 from datetime import timedelta
