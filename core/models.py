@@ -90,11 +90,55 @@ class CandidateProfile(BaseModel):
     website = models.URLField(blank=True, help_text='Your website URL')
     # Media links
     profile_picture = models.ImageField(upload_to='profiles/pictures', blank=True, null=True)
-    resume = models.FileField(upload_to='profiles/resumes', blank=True, null=True)     
+    resume = models.FileField(upload_to='profiles/resumes', blank=True, null=True)
+    is_verified = models.BooleanField(default=False)
+
+    @property
+    def verified(self):
+        return self.is_verified
 
     class Meta:
         verbose_name = _('Candidate Profile')
         verbose_name_plural = _('Candidate Profiles')
+
+    def get_profile_completion_percentage(self):
+        """
+        Calculate profile completion percentage based on filled fields
+        Returns: int (0-100)
+        """
+        # Define all fields that contribute to profile completion (equal weight)
+        profile_fields = [
+            ('first_name', self.user.first_name),
+            ('last_name', self.user.last_name),
+            ('phone', self.phone),
+            ('gender', self.gender),
+            ('date_of_birth', self.date_of_birth),
+            ('headline', self.headline),
+            ('about', self.about),
+            ('linkedin', self.linkedin),
+            ('github', self.github),
+            ('twitter', self.twitter),
+            ('website', self.website),
+            ('profile_picture', self.profile_picture),
+            ('resume', self.resume),
+        ]
+        
+        # Count filled fields
+        total_fields = len(profile_fields)
+        filled_fields = sum(1 for field_name, field_value in profile_fields if field_value)
+        
+        percentage = (filled_fields / total_fields) * 100
+        return round(percentage)
+
+    @property
+    def is_profile_complete(self):
+        """
+        Check if profile completion meets minimum threshold
+        Returns: bool
+        """
+
+        return self.get_profile_completion_percentage() == 100
+    
 
     def __str__(self):
         return f"{self.user.get_full_name()} - {self.headline}"
@@ -200,7 +244,7 @@ class EmployerProfile(BaseModel):
     company_name = models.CharField(max_length=200)
     company_size = models.CharField(max_length=20, choices=CompanySize.choices, blank=True)
     industry = models.CharField(max_length=100, blank=True)
-    founded_year = models.IntegerField(null=True, blank=True)
+    founded_year = models.IntegerField(null=True, blank=True) # remove
     
     # Company Info
     description = models.TextField(blank=True)
@@ -227,6 +271,9 @@ class EmployerProfile(BaseModel):
     class Meta:
         verbose_name = 'Employer Profile'
         verbose_name_plural = 'Employer Profiles'
+
+    def verified(self):
+        return self.is_verified
 
     def __str__(self):
         return f"{self.user.get_full_name()} - {self.company_name}"

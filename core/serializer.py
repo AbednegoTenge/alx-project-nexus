@@ -2,6 +2,7 @@ from rest_framework import serializers
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
 from .models import User, Application, JobPosting
+import os
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -85,8 +86,13 @@ class ApplyJobSerializer(serializers.ModelSerializer):
         request = self.context.get('request')
         job = self.context.get('job')
 
-        if not request.user.is_candidate:
+        candidate_profile = request.user.candidate
+
+        if not candidate_profile:
             raise serializers.ValidationError("Only candidates can apply for job")
+
+        if not candidate_profile.is_verified:
+            raise serializers.ValidationError("Please verify your profile before applying for a job")
         
         if job.status != JobPosting.Status.ACTIVE or not job.is_active:
             raise serializers.ValidationError("This job is no more acepting applications")
@@ -94,31 +100,64 @@ class ApplyJobSerializer(serializers.ModelSerializer):
         # Prevents application duplicates
         if Application.objects.filter(
             job=job,
-            candidate=request.user.candidate
+            candidate=candidate_profile
         ).exists():
             raise serializers.ValidationError("You have already applied for this job")
 
+        # validate resume
+        resume = attrs.get('resume')
+        if resume:
+            if resume.size > 5 * 1024 * 1024:
+                raise serializers.ValidationError("Resume file size should not exceed 5MB")
+            # validate file extension
+            allowed_extensions = [".pdf", ".doc", "docx"]
+            file_extension = os.path.splitext(resume.name)[1].lower()
+            if file_extension not in allowed_extensions:
+                raise serializers.ValidationError("Resume file must be a PDF, DOC, or DOCX file")
         return attrs
 
     def create(self, validated_data):
-        request = self.context.get('request')
         job = self.context.get('job')
-
+        candidate_profile = self.context.get('candidate_profile')
         return Application.objects.create(
             job=job,
-            candidate=request.user.candidate,
+            candidate=candidate_profile,
             **validated_data
         )
 
 class JobPostingSerializer(serializers.ModelSerializer):
     class Meta:
         model = JobPosting
-        fields = ['id', 'title', 'description', 'status', 'created_at', 'updated_at']
+        fields = ['id', 'title', 'description', 'experience_level', 'job_type', 'status', 'created_at', 'updated_at']
 
     def validate(self, attrs):
         request = self.context.get('request')
-        if not request.user.is_employer:
+        employer_profile = request.user.is_employer
+        if not employer_profile:
             raise serializers.ValidationError("Only employers can create job postings")
+        if not employer_profile.is_verified:
+            raise serializers.ValidationError("Please activate your profile before creating a job posting")
+
+        # validate job title
+        title = attrs.get('title')
+        if not title:
+            raise serializers.ValidationError("Job title is required")
+
+        # validate job description
+        description = attrs.get('description')
+        if not description:
+            raise serializers.ValidationError("Job description is required")
+
+        # validate job requirements
+        requirements = attrs.get('requirements')
+        if not requirements:
+            raise serializers.ValidationError("Job requirements are required")
+
+        # validate job responsibilities
+        responsibilities = attrs.get('responsibilities')
+        if not responsibilities:
+            raise serializers.ValidationError("Job responsibilities are required")
+
         return attrs
 
     def create(self, validated_data):

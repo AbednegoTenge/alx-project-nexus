@@ -83,13 +83,13 @@ class JobView(ModelViewSet):
     serializer_class = JobPostingSerializer
 
     def get_serializer_class(self):
-        if self.action in ['retrieve', 'list', 'get_jobs']:
+        if self.action in ['retrieve']:
             return GetJobSerializer
         return JobPostingSerializer
 
     def get_permissions(self):
         # Public read access, authenticated write access
-        if self.action in ['list', 'retrieve', 'get_jobs']:
+        if self.action in ['list', 'retrieve']:
             return [AllowAny()]
         return [IsAuthenticated()]
 
@@ -98,13 +98,6 @@ class JobView(ModelViewSet):
         queryset = self.queryset.filter(status=JobPosting.Status.ACTIVE)
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
-
-    # Alternative: Keep get_jobs if you want both endpoints
-    @action(detail=False, methods=['get'])
-    def get_jobs(self, request):
-        jobs = JobPosting.objects.filter(status=JobPosting.Status.ACTIVE)
-        serializer = self.get_serializer(jobs, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=['post'], url_path='apply', parser_classes=[MultiPartParser, FormParser])
     def apply(self, request, pk=None):

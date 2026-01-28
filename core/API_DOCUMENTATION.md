@@ -531,7 +531,7 @@ resume: <file>
 
 ## Job Application Flow
 
-1. **Browse Jobs:** `GET /api/jobs/` or `GET /api/jobs/get_jobs/`
+1. **Browse Jobs:** `GET /api/jobs/`
 2. **View Job Details:** `GET /api/jobs/{id}/`
 3. **Login/Register:** If not authenticated
 4. **Apply:** `POST /api/jobs/{id}/apply/` with cover letter and resume
