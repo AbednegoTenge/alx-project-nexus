@@ -1,15 +1,13 @@
 from django.test import TestCase
 from django.contrib.auth import get_user_model
 from rest_framework.exceptions import ValidationError
-from rest_framework.test import APIRequestFactory
 from core.serializer import (
     UserSerializer, RegisterSerializer, LoginSerializer,
-    ApplyJobSerializer, JobPostingSerializer, GetJobSerializer
+    ApplyJobSerializer, JobPostingSerializer
 )
-from core.models import CandidateProfile, JobPosting, EmployerProfile, Application, Category
+from core.models import CandidateProfile, JobPosting, EmployerProfile
 from django.core.files.uploadedfile import SimpleUploadedFile
 from unittest.mock import MagicMock
-from decimal import Decimal
 
 User = get_user_model()
 

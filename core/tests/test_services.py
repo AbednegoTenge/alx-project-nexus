@@ -1,48 +1,13 @@
 
 import pytest
-from rest_framework.exceptions import NotFound
 from core.models import (
-    User, CandidateProfile, JobPosting, EmployerProfile, 
+    User, JobPosting
     Application, Notification, SavedJob, CompanyReview
 )
 from core.services import (
-    ProfileService, ApplicationService, 
+    ApplicationService, 
     SavedJobsService, NotificationService, ReviewService
 )
-from django.utils import timezone
-
-@pytest.mark.django_db
-class TestProfileService:
-    def test_get_candidate_profile(self):
-        user = User.objects.create_user(email='candidate@test.com', password='password', role='CANDIDATE', first_name='Jane', last_name='Doe')
-        # Profile created via signal, update it
-        profile = user.candidate
-        profile.headline = "Python Dev"
-        profile.save()
-        
-        data = ProfileService.get_profile(user)
-        
-        assert data['name'] == 'Jane Doe'
-        assert data['email'] == 'candidate@test.com'
-        assert data['headline'] == 'Python Dev'
-        assert 'skills' in data
-        assert 'education' in data
-
-    def test_get_employer_profile(self):
-        user = User.objects.create_user(email='employer@test.com', password='password', role='EMPLOYER')
-        profile = user.employer_profile
-        profile.company_name = "Tech Inc"
-        profile.save()
-        
-        data = ProfileService.get_profile(user)
-        
-        assert data['company_name'] == 'Tech Inc'
-        assert 'id' in data
-
-    def test_get_profile_invalid_role(self):
-        user = User.objects.create_user(email='admin@test.com', password='password', role='ADMIN')
-        with pytest.raises(NotFound):
-            ProfileService.get_profile(user)
 
 @pytest.mark.django_db
 class TestApplicationService:

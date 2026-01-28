@@ -71,10 +71,7 @@ Base URL: `http://localhost:2000/api/`
     "role": "CANDIDATE"
   },
   "access": "eyJ0eXAiOiJKV1QiLCJhbGc...",
-  "refresh": "eyJ0eXAiOiJKV1QiLCJhbGc...",
-  "dashboard": {
-    // Dashboard data from DashboardService
-  }
+  "refresh": "eyJ0eXAiOiJKV1QiLCJhbGc..."
 }
 ```
 
