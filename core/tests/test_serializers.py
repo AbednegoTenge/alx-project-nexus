@@ -16,7 +16,7 @@ User = get_user_model()
 class UserSerializerTest(TestCase):
     def setUp(self):
         self.user_data = {
-            'email': 'test@example.com',
+            'email': 'test@yahoo.org',
             'password': 'password123',
             'role': User.Role.CANDIDATE
         }
@@ -35,7 +35,7 @@ def start_set(keys):
 class RegisterSerializerTest(TestCase):
     def setUp(self):
         self.register_data = {
-            'email': 'newuser@example.com',
+            'email': 'newuser@yahoo.com',
             'first_name': 'John',
             'last_name': 'Doe',
             'password': 'password123',
@@ -55,23 +55,21 @@ class RegisterSerializerTest(TestCase):
         data['confirm_password'] = 'mismatch'
         serializer = RegisterSerializer(data=data)
         self.assertFalse(serializer.is_valid())
-        self.assertIn('non_field_errors', serializer.errors) 
-        # Note: Depending on how ValidationError is raised, it might be in non_field_errors or a specific field.
-        # In the code: raise serializers.ValidationError({'detail': 'Passwords do not match'}, code=400)
-        # It's a dict, so it might be under 'detail' if DRF passes it through, or non_field_errors.
-        # Let's check the error content if needed, but failing validity is key.
+        errors_str = str(serializer.errors)
+        self.assertIn('Passwords do not match', errors_str)
 
 class LoginSerializerTest(TestCase):
     def setUp(self):
         self.password = 'password123'
-        self.user = User.objects.create_user(email='test@example.com', password=self.password)
+        self.user = User.objects.create_user(email='test@yahoo.org', password=self.password, role=User.Role.CANDIDATE)
+        self.user.is_active = True
+        self.user.save()
         self.login_data = {
-            'email': 'test@example.com',
+            'email': 'test@yahoo.org',
             'password': self.password
         }
 
     def test_login_serializer_valid(self):
-        # We need to mock the request in context because authenticate uses it
         request = MagicMock()
         serializer = LoginSerializer(data=self.login_data, context={'request': request})
         self.assertTrue(serializer.is_valid())
@@ -85,21 +83,21 @@ class LoginSerializerTest(TestCase):
         data['password'] = 'wrongpass'
         request = MagicMock()
         serializer = LoginSerializer(data=data, context={'request': request})
-        # authenticate will return None
-        # validation should fail
-        # The serializer raises ValidationError manually in validate
         with self.assertRaises(ValidationError):
             serializer.is_valid(raise_exception=True)
 
 class JobPostingSerializerTest(TestCase):
     def setUp(self):
-        self.employer_user = User.objects.create_user(email='employer@example.com', password='password', role=User.Role.EMPLOYER)
-        # Create EmployerProfile
-        self.employer_profile = EmployerProfile.objects.create(
-            user=self.employer_user,
-            company_name="Test Company",
-            is_verified=True
+        # Create employer user
+        self.employer_user = User.objects.create_user(
+            email='employer@yahoo.org', 
+            password='password', 
+            role=User.Role.EMPLOYER
         )
+        
+        # Get the employer profile that was auto-created
+        self.employer_profile = EmployerProfile.objects.get(user=self.employer_user)
+        
         self.job_data = {
             'title': 'Software Engineer',
             'description': 'Write code',
@@ -108,51 +106,58 @@ class JobPostingSerializerTest(TestCase):
             'experience_level': JobPosting.ExperienceLevel.SENIOR,
             'employment_type': JobPosting.EmploymentType.FULL_TIME,
             'job_type': JobPosting.LocationType.REMOTE,
-            # 'status' defaults to DRAFT usually, but explicit here if needed
+            'status': JobPosting.Status.ACTIVE,
             'salary_min': 100000,
             'salary_max': 150000,
         }
+        
+        # Create a proper mock request with employer_profile
         self.request = MagicMock()
         self.request.user = self.employer_user
+        self.request.user.employer_profile = self.employer_profile
 
     def test_job_posting_serializer_create(self):
         serializer = JobPostingSerializer(data=self.job_data, context={'request': self.request})
-        # Note: There is a potential bug in JobPostingSerializer.validate regarding employer_profile check
-        # validation logic:
-        # employer_profile = request.user.is_employer (boolean)
-        # if not employer_profile.is_verified: (AttributeError)
-        # I suspect this will fail. I will write the test to expect success, and if it fails, I will fix the serializer.
         
-        try:
-            self.assertTrue(serializer.is_valid())
-            job = serializer.save(employer=self.employer_profile) 
-            # Note: create() in serializer is JobPosting.objects.create(**validated_data). 
-            # It doesn't automatically attach the employer unless passed in save() or implicitly handled.
-            # The serializer doesn't strictly handle 'employer' field in 'fields' or 'create'.
-            # Modifying the test to pass employer in save() or fix serializer to get it from user.
-            
-            self.assertEqual(job.title, self.job_data['title'])
-            self.assertEqual(job.employer, self.employer_profile)
-        except AttributeError:
-             print("Caught expected AttributeError in JobPostingSerializer due to bug")
-             # Making test fail if bug is present so I know to fix it
-             self.fail("JobPostingSerializer has a bug accessing is_verified on a boolean")
+        # Debug: print errors if not valid
+        if not serializer.is_valid():
+            print("JobPosting Serializer errors:", serializer.errors)
+        
+        self.assertTrue(serializer.is_valid())
+        job = serializer.save()
+        
+        self.assertEqual(job.title, self.job_data['title'])
+        # Fix: employer is an EmployerProfile, not a User
+        self.assertEqual(job.employer, self.employer_profile)
+        self.assertEqual(job.posted_by, self.employer_profile)
 
 class ApplyJobSerializerTest(TestCase):
     def setUp(self):
-        self.candidate_user = User.objects.create_user(email='candidate@example.com', password='password', role=User.Role.CANDIDATE)
-        self.candidate_profile = CandidateProfile.objects.create(
-            user=self.candidate_user,
-            is_verified=True,
-            first_name='Jane',
-            last_name='Doe'
+        # Create candidate user
+        self.candidate_user = User.objects.create_user(
+            email='candidate@yahoo.org', 
+            password='password', 
+            role=User.Role.CANDIDATE
         )
+        self.candidate_user.first_name = 'Jane'
+        self.candidate_user.last_name = 'Doe'
+        self.candidate_user.save()
+
+        # Get the auto-created candidate profile
+        self.candidate_profile = CandidateProfile.objects.get(user=self.candidate_user)
         
-        self.employer_user = User.objects.create_user(email='emp@example.com', password='password', role=User.Role.EMPLOYER)
-        self.employer_profile = EmployerProfile.objects.create(user=self.employer_user, company_name="Co", is_verified=True)
+        # Create employer user and profile
+        self.employer_user = User.objects.create_user(
+            email='emp@yahoo.com', 
+            password='password', 
+            role=User.Role.EMPLOYER
+        )
+        self.employer_profile = EmployerProfile.objects.get(user=self.employer_user)
         
+        # Create job posting
         self.job = JobPosting.objects.create(
             employer=self.employer_profile,
+            posted_by=self.employer_profile,
             title='Dev',
             description='Desc',
             status=JobPosting.Status.ACTIVE,
@@ -160,25 +165,37 @@ class ApplyJobSerializerTest(TestCase):
             employment_type=JobPosting.EmploymentType.FULL_TIME,
             job_type=JobPosting.LocationType.REMOTE,
             salary_min=50,
-            salary_max=100
+            salary_max=100,
+            requirements=['Python'],
+            responsibilities=['Code']
         )
-        # Manually set is_active = True for the job since serializer checks it
-        # Model has is_active but status is also checked.
-        # JobPostingSerializer checks: job.status != JobPosting.Status.ACTIVE or not job.is_active
         
         self.resume_file = SimpleUploadedFile("resume.pdf", b"file_content", content_type="application/pdf")
 
     def test_apply_job_serializer_valid(self):
+        # ApplyJobSerializer expects job and candidate from context, not data
         data = {
             'cover_letter': 'Hello',
-            'resume': self.resume_file
+            'resume': self.resume_file,
         }
+        
+        # Create proper mock request
         request = MagicMock()
         request.user = self.candidate_user
+        request.user.candidate_profile = self.candidate_profile
         
-        context = {'request': request, 'job': self.job, 'candidate_profile': self.candidate_profile}
+        # Pass job and candidate_profile in context (based on your view implementation)
+        context = {
+            'request': request,
+            'job': self.job
+        }
         
         serializer = ApplyJobSerializer(data=data, context=context)
+        
+        # Debug: print errors if not valid
+        if not serializer.is_valid():
+            print("ApplyJob Serializer errors:", serializer.errors)
+        
         self.assertTrue(serializer.is_valid())
         application = serializer.save()
         

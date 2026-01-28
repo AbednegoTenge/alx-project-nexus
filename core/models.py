@@ -566,19 +566,7 @@ class CompanyReview(BaseModel):
     
     # Review Content
     rating = models.IntegerField(validators=[MinValueValidator(1), MaxValueValidator(5)])
-    title = models.CharField(max_length=200)
     review_text = models.TextField()
-    pros = models.TextField(blank=True)
-    cons = models.TextField(blank=True)
-    
-    # Reviewer Context
-    job_title = models.CharField(max_length=200, blank=True)
-    is_current_employee = models.BooleanField(default=False)
-    is_anonymous = models.BooleanField(default=False)
-    
-    # Verification & Engagement
-    is_verified = models.BooleanField(default=False)
-    helpful_count = models.IntegerField(default=0)
 
     class Meta:
         verbose_name = 'Company Review'
@@ -596,6 +584,7 @@ class Notification(BaseModel):
         JOB_ALERT = 'JOB_ALERT', _('Job Alert')
         INTERVIEW = 'INTERVIEW', _('Interview Scheduled')
         SYSTEM = 'SYSTEM', _('System Notification')
+        APPLICATION = 'APPLICATION', _('Application')
 
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notifications')
     notification_type = models.CharField(max_length=30, choices=NotificationType.choices)

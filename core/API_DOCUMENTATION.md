@@ -112,16 +112,111 @@ Authorization: Bearer <access_token>
     "id": 1,
     "email": "user@example.com",
     "role": "CANDIDATE"
-  },
-  "dashboard": {
-    // Dashboard data
   }
 }
 ```
 
 ---
 
-### 4. Refresh Token
+### 4. Get User Profile
+**Endpoint:** `GET /api/auth/profile/`
+
+**Permission:** Authenticated
+
+**Response:** `200 OK`
+```json
+{
+  "name": "John Doe",
+  "email": "user@example.com",
+  "headline": "Software Engineer",
+  "education": [...],
+  "skills": [...]
+  // ... other profile fields
+}
+```
+
+---
+
+### 5. Get User Applications
+**Endpoint:** `GET /api/auth/applications/`
+
+**Permission:** Authenticated
+
+**Response:** `200 OK`
+```json
+[
+  {
+    "id": 1,
+    "job_title": "Senior Engineer",
+    "company_name": "Tech Corp",
+    "status": "PENDING",
+    "applied_at": "2026-01-28T10:00:00Z"
+  }
+]
+```
+
+---
+
+### 6. Get User Notifications
+**Endpoint:** `GET /api/auth/notifications/`
+
+**Permission:** Authenticated
+
+**Response:** `200 OK`
+```json
+{
+  "unread_count": 5,
+  "notifications": [
+    {
+      "id": 1,
+      "title": "Application Received",
+      "reading": false,
+      "created_at": "..."
+    }
+  ]
+}
+```
+
+---
+
+### 7. Get Saved Jobs
+**Endpoint:** `GET /api/auth/saved_jobs/`
+
+**Permission:** Authenticated
+
+**Response:** `200 OK`
+```json
+[
+  {
+    "id": 1,
+    "job_title": "React Dev",
+    "company_name": "Startup Inc",
+    "created_at": "..."
+  }
+]
+```
+
+---
+
+### 8. Get Employer Reviews
+**Endpoint:** `GET /api/auth/reviews/`
+
+**Permission:** Authenticated (Employer)
+
+**Response:** `200 OK`
+```json
+[
+  {
+     "rating": 5,
+     "comment": "Great place",
+     "created_at": "..."
+  }
+]
+```
+
+---
+
+### 9. Refresh Token
 **Endpoint:** `POST /api/auth/refresh/`
 
 **Permission:** Public (AllowAny)
@@ -145,7 +240,7 @@ Authorization: Bearer <access_token>
 
 ## Job Endpoints
 
-### 5. List All Active Jobs
+### 10. List All Active Jobs
 **Endpoint:** `GET /api/jobs/`
 
 **Permission:** Public (AllowAny)
@@ -194,7 +289,7 @@ Authorization: Bearer <access_token>
 
 ---
 
-### 6. Get Active Jobs (Alternative)
+### 11. Get Active Jobs (Alternative)
 **Endpoint:** `GET /api/jobs/get_jobs/`
 
 **Permission:** Public (AllowAny)
@@ -203,7 +298,7 @@ Authorization: Bearer <access_token>
 
 ---
 
-### 7. Get Single Job
+### 12. Get Single Job
 **Endpoint:** `GET /api/jobs/{id}/`
 
 **Permission:** Public (AllowAny)
@@ -251,7 +346,7 @@ Authorization: Bearer <access_token>
 
 ---
 
-### 8. Create Job Posting
+### 13. Create Job Posting
 **Endpoint:** `POST /api/jobs/`
 
 **Permission:** Authenticated
@@ -319,7 +414,7 @@ Content-Type: application/json
 
 ---
 
-### 9. Update Job Posting (Partial)
+### 14. Update Job Posting (Partial)
 **Endpoint:** `PATCH /api/jobs/{id}/`
 
 **Permission:** Authenticated
@@ -354,7 +449,7 @@ Content-Type: application/json
 
 ---
 
-### 10. Update Job Posting (Full)
+### 15. Update Job Posting (Full)
 **Endpoint:** `PUT /api/jobs/{id}/`
 
 **Permission:** Authenticated
@@ -379,7 +474,7 @@ Content-Type: application/json
 
 ---
 
-### 11. Delete Job Posting
+### 16. Delete Job Posting
 **Endpoint:** `DELETE /api/jobs/{id}/`
 
 **Permission:** Authenticated
@@ -395,7 +490,7 @@ Authorization: Bearer <access_token>
 
 ---
 
-### 12. Apply to Job
+### 17. Apply to Job
 **Endpoint:** `POST /api/jobs/{id}/apply/`
 
 **Permission:** Authenticated (Candidate only)
@@ -477,6 +572,15 @@ resume: <file>
 | DELETE | `/api/jobs/{id}/` | Authenticated | Delete job |
 | GET | `/api/jobs/get_jobs/` | Public | List active jobs (alt) |
 | POST | `/api/jobs/{id}/apply/` | Authenticated | Apply to job |
+
+### User Data (New)
+| Method | Endpoint | Permission | Description |
+|--------|----------|------------|-------------|
+| GET | `/api/auth/profile/` | Authenticated | Get user profile |
+| GET | `/api/auth/applications/` | Authenticated | Get user applications |
+| GET | `/api/auth/notifications/` | Authenticated | Get user notifications |
+| GET | `/api/auth/saved_jobs/` | Authenticated | Get saved jobs |
+| GET | `/api/auth/reviews/` | Authenticated | Get employer reviews |
 
 ---
 

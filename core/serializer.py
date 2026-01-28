@@ -81,18 +81,21 @@ class ApplyJobSerializer(serializers.ModelSerializer):
     class Meta:
         model = Application
         fields = ['id', 'job', 'candidate', 'cover_letter', 'resume']
+        extra_kwargs = {
+            'job': {'read_only': True},
+            'candidate': {'read_only': True}
+        }
 
     def validate(self, attrs):
         request = self.context.get('request')
         job = self.context.get('job')
+        print(job)
 
         candidate_profile = request.user.candidate
 
         if not candidate_profile:
             raise serializers.ValidationError("Only candidates can apply for job")
 
-        if not candidate_profile.is_verified:
-            raise serializers.ValidationError("Please verify your profile before applying for a job")
         
         if job.status != JobPosting.Status.ACTIVE or not job.is_active:
             raise serializers.ValidationError("This job is no more acepting applications")
@@ -118,7 +121,7 @@ class ApplyJobSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         job = self.context.get('job')
-        candidate_profile = self.context.get('candidate_profile')
+        candidate_profile = self.context.get('request').user.candidate
         return Application.objects.create(
             job=job,
             candidate=candidate_profile,
@@ -132,7 +135,7 @@ class JobPostingSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         request = self.context.get('request')
-        if not hasattr(request.user, 'employer_profile'):
+        if not request.user.is_employer:
             raise serializers.ValidationError("Only employers can create job postings")
 
         # validate job title

@@ -1,253 +1,243 @@
-from django.db.models import Count, Avg
-from django.utils import timezone
-from django.utils.timezone import timedelta
-from django.db.models import Q
+from rest_framework.exceptions import NotFound
+from .models import (
+    Application, Notification, SavedJob, 
+    CandidateProfile, EmployerProfile,
+    Address, CompanyReview
+)
 
-
-class DashboardService:
-    """Service class for handling dashboard data"""
-
+class ProfileService:
+    """Service for retrieving user profile information"""
+    
     @staticmethod
-    def get_dashboard(user):
-        """Return role based dashboard data"""
+    def get_profile(user):
         if user.is_candidate:
-            return DashboardService.get_candidate_dashboard(user)
+            return ProfileService.get_candidate_profile(user)
         elif user.is_employer:
-            return DashboardService.get_employer_dashboard(user)
-        else:
-            return {
-                "status": "error",
-                "message": "User role not recognized"
-            }
-        
+            return ProfileService.get_employer_profile(user)
+        raise NotFound("User role not recognized")
 
     @staticmethod
-    def get_candidate_dashboard(user):
-        """Return candidate dashboard data"""
-        from .models import (
-            Application, Notification, SavedJob, 
-            CandidateSkill, Education, Certification,
-            Address
-        )
-        from django.core.exceptions import ObjectDoesNotExist
-        
+    def get_candidate_profile(user):
         try:
-            profile = user.candidate
-        except ObjectDoesNotExist:
-            return {
-                'status': 'error',
-                'message': 'Candidate profile not found'
-            }
-            
-        # Application Stats
-        applications = Application.objects.filter(candidate=profile)
-        total_applications = applications.count()
-        
-        # Status Breakdown
-        status_counts = {
-            'total': total_applications,
-            'pending': applications.filter(status=Application.Status.PENDING).count(),
-            'reviewed': applications.filter(status=Application.Status.REVIEWED).count(),
-            'shortlisted': applications.filter(status=Application.Status.SHORTLISTED).count(),
-            'interview': applications.filter(status=Application.Status.INTERVIEW).count(),
-            'rejected': applications.filter(status=Application.Status.REJECTED).count(),
-            'accepted': applications.filter(status=Application.Status.ACCEPTED).count(),
-        }
-        
-        # Recent Activity (Last 5 applications)
-        recent_apps_data = list(
-            applications.select_related('job', 'job__employer')
-            .order_by('-applied_at')[:5]
-            .values(
-                'id', 'job__title', 'job__employer__company_name', 'applied_at', 'status', 'job__employer__logo'
-            )
-        )
+            # Fetch the profile and prefetch related tables
+            profile = CandidateProfile.objects.prefetch_related(
+                'candidate_skills__skill',  # prefetch skills and related Skill object
+                'education',              # prefetch education
+                'certifications'           # prefetch certifications
+            ).get(user=user)
+        except CandidateProfile.DoesNotExist:
+            raise NotFound("Candidate profile not found")
 
         # Skills
-        skills = CandidateSkill.objects.filter(candidate=profile).select_related('skill')
-        skills_data = list(skills.values(
-            'id', 'skill__name', 'skill__category', 'skill__description'
-        ))
+        skills_data = [
+            {
+                'id': cs.id,
+                'name': cs.skill.name,
+                'category': cs.skill.category,
+                'description': cs.skill.description
+            } for cs in profile.candidate_skills.all()
+        ]
 
         # Education
-        education_data = list(Education.objects.filter(candidate=profile).values(
-            'id', 'institution', 'level', 'field_of_study', 'start_date', 'end_date',
-        ))
+        education_data = [
+            {
+                'id': e.id,
+                'institution': e.institution,
+                'level': e.level,
+                'field_of_study': e.field_of_study,
+                'start_date': e.start_date,
+                'end_date': e.end_date
+            } for e in profile.education.all()
+        ]
 
         # Certifications
-        certifications_data = list(Certification.objects.filter(candidate=profile).values(
-            'id', 'name', 'issuing_organization', 'issue_date', 'expiry_date'
-        ))
+        certifications_data = [
+            {
+                'id': c.id,
+                'name': c.name,
+                'issuing_organization': c.issuing_organization,
+                'issue_date': c.issue_date,
+                'expiry_date': c.expiry_date
+            } for c in profile.certifications.all()
+        ]
 
-        # Notifications (User based, so works without profile)
-        notifications = Notification.objects.filter(user=user).order_by('-created_at')
-        unread_count = notifications.filter(is_read=False).count()
-        recent_notifications = notifications[:5]
-        notifications_data = list(recent_notifications.values(
-            'id', 'title', 'notification_type', 'created_at', 'is_read'
-        ))
+        # Address (usually single object; optional optimization possible)
+        addresses = Address.objects.filter(user=user)
+        address_data = list(addresses.values('id', 'street', 'city', 'state', 'postal_code', 'country'))
 
-        address = Address.objects.filter(user=user)
-        address_data = list(address.values(
-            'id', 'street', 'city', 'state', 'postal_code', 'country'
-        ))
-
-        # Saved Jobs
-        if profile:
-            saved_job_qs = SavedJob.objects.filter(candidate=profile)
-            saved_jobs = saved_job_qs.select_related('job', 'job__employer').order_by('-created_at')[:5]
-            saved_jobs_count = saved_job_qs.count()
-        else:
-            saved_jobs = []
-            saved_jobs_count = 0
-
-        saved_jobs_data = list(saved_jobs.values(
-            'id', 'job__title', 'job__employer__company_name', 'created_at', 'job__employer__logo'
-        ))
-
+        # Build final payload
         return {
-            "status": "active",
-            "profile": {
-                "picture": profile.profile_picture if profile.profile_picture else None,
-                "name": user.get_full_name(),
-                "email": user.email,
-                "phone": profile.phone,
-                "gender": profile.gender,
-                "date_of_birth": profile.date_of_birth,
-                "headline": profile.headline if profile else "",
-                "about": profile.about,
-                "social_links": {
-                    "linkedin": profile.linkedin,
-                    "github": profile.github,
-                    "twitter": profile.twitter,
-                    "website": profile.website,
-                },
-                "resume": profile.resume if profile.resume else None,
-                "skills": skills_data,
-                "education": education_data,
-                "certifications": certifications_data,
-                "address": address_data,
+            "picture": profile.profile_picture.url if profile.profile_picture else None,
+            "name": user.get_full_name(),
+            "email": user.email,
+            "phone": profile.phone,
+            "gender": profile.gender,
+            "date_of_birth": profile.date_of_birth,
+            "headline": profile.headline,
+            "about": profile.about,
+            "social_links": {
+                "linkedin": profile.linkedin,
+                "github": profile.github,
+                "twitter": profile.twitter,
+                "website": profile.website,
             },
-            "stats": {
-                "applications": status_counts,
-                "notifications": {
-                    "unread": unread_count,
-                    "total": notifications.count()
-                },
-                "saved_jobs_count": saved_jobs_count
-            },
-            "recent_applications": recent_apps_data,
-            "recent_notifications": notifications_data,
-            "saved_jobs": saved_jobs_data
-        }    
-        
+            "resume": profile.resume.url if profile.resume else None,
+            "skills": skills_data,
+            "education": education_data,
+            "certifications": certifications_data,
+            "address": address_data,
+        }
 
-    def get_employer_dashboard(user):
-        """Dashboard data for employers"""
-        from .models import EmployerProfile, JobPosting, Application, CompanyReview
-        
+
+    @staticmethod
+    def get_employer_profile(user):
         try:
             profile = user.employer_profile
         except EmployerProfile.DoesNotExist:
-            return {
-                'profile_exists': False,
-                'message': 'Please complete your company profile to get started'
-            }
-        
-        # Get all jobs posted by this employer
-        jobs = JobPosting.objects.filter(employer=profile, is_active=True)
-        
-        # Active jobs
-        active_jobs = jobs.filter(status='ACTIVE')
-        
-        # All applications for this employer's jobs
-        all_applications = Application.objects.filter(
-            job__employer=profile,
-            is_active=True
-        )
-        
-        # Recent applications (last 10)
-        recent_applications = all_applications.select_related(
-            'candidate__user', 
-            'job'
-        ).order_by('-applied_at')[:10]
-        
-        # Applications by status
-        applications_by_status = all_applications.values('status').annotate(count=Count('id'))
-        
-        # Top performing jobs (by applications)
-        top_jobs = active_jobs.annotate(
-            app_count=Count('applications', filter=Q(applications__is_active=True))
-        ).order_by('-app_count')[:5]
-        
-        # Jobs expiring soon (within 7 days)
-        expiring_soon = active_jobs.filter(
-            application_deadline__lte=timezone.now() + timedelta(days=7),
-            application_deadline__gte=timezone.now()
-        ).count()
-        
-        # Recent notifications
-        from .models import Notification
-        unread_notifications = Notification.objects.filter(
-            user=user,
-            is_read=False,
-            is_active=True
-        ).count()
-        
-        # Company reviews
-        reviews = CompanyReview.objects.filter(company=profile, is_active=True)
-        avg_rating = reviews.aggregate(avg=Avg('rating'))['avg'] or 0
-        
+            raise NotFound("Employer profile not found")
+
         return {
-            'profile_exists': True,
-            'company': {
-                'id': profile.id,
-                'company_name': profile.company_name,
-                'logo': profile.logo.url if profile.logo else None,
-                'industry': profile.industry or '',
-                'is_verified': profile.is_verified,
-                'city': profile.city or '',
-                'country': profile.country or '',
-            },
-            'statistics': {
-                'total_jobs': jobs.count(),
-                'active_jobs': active_jobs.count(),
-                'draft_jobs': jobs.filter(status='DRAFT').count(),
-                'closed_jobs': jobs.filter(status='CLOSED').count(),
-                'total_applications': all_applications.count(),
-                'pending_applications': all_applications.filter(status='PENDING').count(),
-                'shortlisted_candidates': all_applications.filter(status='SHORTLISTED').count(),
-                'jobs_expiring_soon': expiring_soon,
-                'unread_notifications': unread_notifications,
-                'average_rating': round(float(avg_rating), 1),
-                'total_reviews': reviews.count(),
-            },
-            'applications_by_status': {
-                item['status']: item['count'] 
-                for item in applications_by_status
-            },
-            'recent_applications': [
-                {
-                    'id': app.id,
-                    'candidate_name': app.candidate.user.get_full_name(),
-                    'candidate_headline': app.candidate.headline or '',
-                    'candidate_picture': app.candidate.profile_picture.url if app.candidate.profile_picture else None,
-                    'job_title': app.job.title,
-                    'status': app.status,
-                    'applied_at': app.applied_at.isoformat() if app.applied_at else None,
-                    'expected_salary': float(app.expected_salary) if app.expected_salary else None,
-                }
-                for app in recent_applications
-            ],
-            'top_performing_jobs': [
-                {
-                    'id': job.id,
-                    'title': job.title,
-                    'applications_count': job.app_count,
-                    'location': job.location or '',
-                    'posted_at': job.posted_at.isoformat() if job.posted_at else None,
-                    'status': job.status,
-                }
-                for job in top_jobs
-            ],
+            'id': profile.id,
+            'company_name': profile.company_name,
+            'logo': profile.logo.url if profile.logo else None,
+            'industry': profile.industry or '',
+            'is_verified': profile.is_verified,
+            'city': profile.city or '',
+            'country': profile.country or '',
+            'description': profile.description,
+            'website_url': profile.website_url,
+            'linkedin_url': profile.linkedin_url,
         }
+class ApplicationService:
+    """Service for retrieving application related data efficiently"""
+
+    @staticmethod
+    def get_candidate_applications(user, limit=None):
+        try:
+            profile = user.candidate
+        except CandidateProfile.DoesNotExist:
+            raise NotFound("Candidate profile not found")
+
+        # Fetch applications and related job + employer in one go
+        qs = Application.objects.filter(candidate=profile, is_active=True) \
+            .select_related('job', 'job__employer') \
+            .order_by('-applied_at')
+
+        if limit:
+            qs = qs[:limit]
+
+        return [
+            {
+                'id': app.id,
+                'job_title': app.job.title,
+                'company_name': app.job.employer.company_name,
+                'applied_at': app.applied_at.isoformat() if app.applied_at else None,
+                'status': app.status,
+                'company_logo': app.job.employer.logo.url if app.job.employer.logo else None,
+            }
+            for app in qs
+        ]
+
+    @staticmethod
+    def get_employer_applications(user, limit=None):
+        try:
+            profile = user.employer_profile
+        except EmployerProfile.DoesNotExist:
+            raise NotFound("Employer profile not found")
+
+        # Fetch applications with related candidate + user + job in one query
+        qs = Application.objects.filter(job__employer=profile, is_active=True) \
+            .select_related('candidate', 'candidate__user', 'job') \
+            .order_by('-applied_at')
+
+        if limit:
+            qs = qs[:limit]
+
+        return [
+            {
+                'id': app.id,
+                'candidate_name': app.candidate.user.get_full_name(),
+                'candidate_headline': app.candidate.headline or '',
+                'candidate_picture': app.candidate.profile_picture.url if app.candidate.profile_picture else None,
+                'job_title': app.job.title,
+                'status': app.status,
+                'applied_at': app.applied_at.isoformat() if app.applied_at else None,
+                'expected_salary': float(app.expected_salary) if app.expected_salary else None,
+            }
+            for app in qs
+        ]
+
+
+class SavedJobsService:
+    """Service for retrieving saved jobs efficiently"""
+
+    @staticmethod
+    def get_saved_jobs(user, limit=5):
+        try:
+            profile = user.candidate
+        except CandidateProfile.DoesNotExist:
+            raise NotFound("Candidate profile not found")
+
+        # Fetch saved jobs with related job + employer in one query
+        qs = SavedJob.objects.filter(candidate=profile).select_related('job', 'job__employer').order_by('-created_at')
+
+        if limit:
+            qs = qs[:limit]
+
+        return [
+            {
+                'id': sj.id,
+                'job_title': sj.job.title,
+                'company_name': sj.job.employer.company_name,
+                'created_at': sj.created_at.isoformat() if sj.created_at else None,
+                'company_logo': sj.job.employer.logo.url if sj.job.employer.logo else None,
+            }
+            for sj in qs
+        ]
+
+class NotificationService:
+    """Service for retrieving notifications"""
+    
+    @staticmethod
+    def get_unread_notifications(user):
+        return Notification.objects.filter(user=user, is_read=False).count()
+
+    @staticmethod
+    def get_notifications(user, limit=5):
+        notifications = Notification.objects.filter(user=user).order_by('-created_at')
+        unread_count = NotificationService.get_unread_notifications(user)
+        
+        if limit:
+            notifications = notifications[:limit]
+            
+        data = list(notifications.values('id', 'title', 'notification_type', 'created_at', 'is_read'))
+        return {
+            "unread_count": unread_count,
+            "notifications": data
+        }
+
+
+
+class ReviewService:
+    """Service for retrieving reviews"""
+    
+    @staticmethod
+    def get_reviews(user, limit=5):
+        try:
+            profile = user.employer_profile
+        except EmployerProfile.DoesNotExist:
+            raise NotFound("Employer profile not found")
+            
+        qs = CompanyReview.objects.filter(company=profile).select_related('reviewer').order_by('-created_at')
+        
+        if limit:
+            qs = qs[:limit]
+            
+        return list(qs.values(
+            'id', 
+            'reviewer__first_name', 
+            'reviewer__last_name', 
+            'rating',
+            'review_text', 
+            'created_at'
+        ))

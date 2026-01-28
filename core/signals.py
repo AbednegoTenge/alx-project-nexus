@@ -16,20 +16,20 @@ def create_candidate_or_employer_profile(sender, instance, created, **kwargs):
 
 
 @receiver(post_save, sender=Application)
-def send_notification(sender, instance, created, **kwargs):
+def send_employer_notification(sender, instance, created, **kwargs):
     if created:
         Notification.objects.create(
             user=instance.job.employer.user,
             title=f"New Application for {instance.job.title}",
             notification_type=Notification.NotificationType.APPLICATION,
-            content=f"{instance.user.get_full_name()} has applied for the position of {instance.job.title}.",
+            content=f"{instance.candidate.user.get_full_name()} has applied for the position of {instance.job.title}.",
         )
 
 @receiver(post_save, sender=Application)
-def send_notification(sender, instance, created, **kwargs):
+def send_candidate_notification(sender, instance, created, **kwargs):
     if created:
         Notification.objects.create(
-            user=instance.user,
+            user=instance.candidate.user,
             title=f"Application for {instance.job.title} has been submitted",
             notification_type=Notification.NotificationType.APPLICATION,
             content=f"You have successfully applied for the position of {instance.job.title} at {instance.job.employer.company_name}.",

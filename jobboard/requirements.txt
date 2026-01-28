@@ -6,3 +6,4 @@ djangorestframework_simplejwt
 pytest-django
 pytest
 Pillow
+django-cors-headers

@@ -12,7 +12,13 @@ from .serializer import (
     JobPostingSerializer,
     GetJobSerializer
 )
-from .services import DashboardService
+from .services import (
+    SavedJobsService,
+    ProfileService, 
+    ApplicationService, 
+    NotificationService,
+    ReviewService,
+)
 from .models import JobPosting
 from rest_framework.parsers import MultiPartParser, FormParser
 
@@ -53,11 +59,44 @@ class AuthViewSet(GenericViewSet):
     @action(detail=False, methods=['get'])
     def me(self, request):
         user = request.user
-        dashboard = DashboardService.get_dashboard(user)
         return Response({
             'user': UserSerializer(user).data,
-            'dashboard': dashboard
         }, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=['get'])
+    def profile(self, request):
+        user = request.user
+        profile_data = ProfileService.get_profile(user)
+        return Response(profile_data, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=['get'])
+    def applications(self, request):
+        user = request.user
+        if user.is_candidate:
+            data = ApplicationService.get_candidate_applications(user)
+        elif user.is_employer:
+            data = ApplicationService.get_employer_applications(user)
+        else:
+            data = []
+        return Response(data, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=['get'])
+    def notifications(self, request):
+        user = request.user
+        data = NotificationService.get_notifications(user, limit=None)
+        return Response(data, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=['get'])
+    def reviews(self, request):
+        user = request.user
+        data = ReviewService.get_reviews(user, limit=None)
+        return Response(data, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=['get'])
+    def saved_jobs(self, request):
+        user = request.user
+        data = SavedJobsService.get_saved_jobs(user, limit=None)
+        return Response(data, status=status.HTTP_200_OK)
 
     @action(detail=False, methods=['post'])
     def register(self, request):
