@@ -1,222 +1,150 @@
-# Job Board API Documentation
+# Job Portal API Documentation
 
-Base URL: `http://localhost:2000/api/`
+## Base URL
+```
+http://localhost:8000/api
+```
 
-## Authentication Endpoints
+## Authentication
+This API uses JWT (JSON Web Token) authentication. Include the access token in the Authorization header:
+```
+Authorization: Bearer <access_token>
+```
 
-### 1. Register User
-**Endpoint:** `POST /api/auth/register/`
+---
 
-**Permission:** Public (AllowAny)
+## Endpoints Overview
+
+### Authentication Endpoints
+- `POST /auth/login/` - User login
+- `POST /auth/register/` - User registration
+- `POST /auth/refresh/` - Refresh access token
+- `GET /auth/me/` - Get current user info
+- `GET /auth/profile/` - Get current user's profile
+- `PATCH /auth/update_profile/` - Update current user's profile
+- `PUT /auth/update_profile/` - Replace current user's profile
+- `GET /auth/applications/` - Get user's applications
+- `GET /auth/notifications/` - Get user's notifications
+- `GET /auth/reviews/` - Get user's reviews
+- `GET /auth/saved_jobs/` - Get user's saved jobs
+
+### Job Endpoints
+- `GET /jobs/` - List all active jobs
+- `GET /jobs/{id}/` - Get job details
+- `POST /jobs/` - Create a new job (Employer only)
+- `PUT /jobs/{id}/` - Update job (Employer only)
+- `PATCH /jobs/{id}/` - Partial update job (Employer only)
+- `DELETE /jobs/{id}/` - Delete job (Employer only)
+- `POST /jobs/{id}/apply/` - Apply for a job
+
+---
+
+## Detailed Endpoint Documentation
+
+### 1. User Registration
+
+**Endpoint:** `POST /auth/register/`
+
+**Description:** Register a new user account (Candidate or Employer)
+
+**Authentication:** Not required
 
 **Request Body:**
 ```json
 {
   "email": "user@example.com",
-  "password": "securepassword123",
-  "confirm_password": "securepassword123",
+  "password": "securePassword123",
+  "password2": "securePassword123",
   "first_name": "John",
   "last_name": "Doe",
-  "role": "CANDIDATE" // or "EMPLOYER"
+  "role": "CANDIDATE"
 }
 ```
 
-**Response:** `201 CREATED`
+**Request Fields:**
+- `email` (string, required): User's email address
+- `password` (string, required): User's password
+- `password2` (string, required): Password confirmation
+- `first_name` (string, optional): User's first name
+- `last_name` (string, optional): User's last name
+- `role` (string, required): User role - `CANDIDATE`, `EMPLOYER`, or `ADMIN`
+
+**Success Response (201 Created):**
 ```json
 {
   "user": {
     "id": 1,
     "email": "user@example.com",
-    "role": "CANDIDATE"
+    "first_name": "John",
+    "last_name": "Doe",
+    "role": "CANDIDATE",
+    "is_active": true
   }
 }
 ```
 
-**Error Responses:**
-- `400 BAD REQUEST` - If passwords don't match
+**Error Response (400 Bad Request):**
 ```json
 {
-  "detail": "Passwords do not match"
-}
-```
-
-- `400 BAD REQUEST` - If email already exists
-```json
-{
-  "email": ["user with this email already exists."]
+  "email": ["User with this email already exists."],
+  "password": ["Passwords do not match."]
 }
 ```
 
 ---
 
-### 2. Login
-**Endpoint:** `POST /api/auth/login/`
+### 2. User Login
 
-**Permission:** Public (AllowAny)
+**Endpoint:** `POST /auth/login/`
+
+**Description:** Authenticate user and receive JWT tokens
+
+**Authentication:** Not required
 
 **Request Body:**
 ```json
 {
   "email": "user@example.com",
-  "password": "securepassword123"
+  "password": "securePassword123"
 }
 ```
 
-**Response:** `200 OK`
+**Request Fields:**
+- `email` (string, required): User's email address
+- `password` (string, required): User's password
+
+**Success Response (200 OK):**
 ```json
 {
   "user": {
     "id": 1,
     "email": "user@example.com",
-    "role": "CANDIDATE"
+    "first_name": "John",
+    "last_name": "Doe",
+    "role": "CANDIDATE",
+    "is_active": true
   },
   "access": "eyJ0eXAiOiJKV1QiLCJhbGc...",
   "refresh": "eyJ0eXAiOiJKV1QiLCJhbGc..."
 }
 ```
 
-**Error Responses:**
-- `400 BAD REQUEST` - If credentials are invalid
+**Error Response (401 Unauthorized):**
 ```json
 {
-  "detail": "Invalid credentials"
-}
-```
-
-- `400 BAD REQUEST` - If user account is inactive
-```json
-{
-  "detail": "User is not active"
+  "detail": "Invalid email or password"
 }
 ```
 
 ---
 
-### 3. Get Current User
-**Endpoint:** `GET /api/auth/me/`
+### 3. Refresh Token
 
-**Permission:** Authenticated
+**Endpoint:** `POST /auth/refresh/`
 
-**Headers:**
-```
-Authorization: Bearer <access_token>
-```
+**Description:** Get a new access token using refresh token
 
-**Response:** `200 OK`
-```json
-{
-  "user": {
-    "id": 1,
-    "email": "user@example.com",
-    "role": "CANDIDATE"
-  }
-}
-```
-
----
-
-### 4. Get User Profile
-**Endpoint:** `GET /api/auth/profile/`
-
-**Permission:** Authenticated
-
-**Response:** `200 OK`
-```json
-{
-  "name": "John Doe",
-  "email": "user@example.com",
-  "headline": "Software Engineer",
-  "education": [...],
-  "skills": [...]
-  // ... other profile fields
-}
-```
-
----
-
-### 5. Get User Applications
-**Endpoint:** `GET /api/auth/applications/`
-
-**Permission:** Authenticated
-
-**Response:** `200 OK`
-```json
-[
-  {
-    "id": 1,
-    "job_title": "Senior Engineer",
-    "company_name": "Tech Corp",
-    "status": "PENDING",
-    "applied_at": "2026-01-28T10:00:00Z"
-  }
-]
-```
-
----
-
-### 6. Get User Notifications
-**Endpoint:** `GET /api/auth/notifications/`
-
-**Permission:** Authenticated
-
-**Response:** `200 OK`
-```json
-{
-  "unread_count": 5,
-  "notifications": [
-    {
-      "id": 1,
-      "title": "Application Received",
-      "reading": false,
-      "created_at": "..."
-    }
-  ]
-}
-```
-
----
-
-### 7. Get Saved Jobs
-**Endpoint:** `GET /api/auth/saved_jobs/`
-
-**Permission:** Authenticated
-
-**Response:** `200 OK`
-```json
-[
-  {
-    "id": 1,
-    "job_title": "React Dev",
-    "company_name": "Startup Inc",
-    "created_at": "..."
-  }
-]
-```
-
----
-
-### 8. Get Employer Reviews
-**Endpoint:** `GET /api/auth/reviews/`
-
-**Permission:** Authenticated (Employer)
-
-**Response:** `200 OK`
-```json
-[
-  {
-     "rating": 5,
-     "comment": "Great place",
-     "created_at": "..."
-  }
-]
-```
-
----
-
-### 9. Refresh Token
-**Endpoint:** `POST /api/auth/refresh/`
-
-**Permission:** Public (AllowAny)
+**Authentication:** Not required
 
 **Request Body:**
 ```json
@@ -225,7 +153,7 @@ Authorization: Bearer <access_token>
 }
 ```
 
-**Response:** `200 OK`
+**Success Response (200 OK):**
 ```json
 {
   "access": "eyJ0eXAiOiJKV1QiLCJhbGc...",
@@ -235,280 +163,562 @@ Authorization: Bearer <access_token>
 
 ---
 
-## Job Endpoints
+### 4. Get Current User
 
-### 10. List All Active Jobs
-**Endpoint:** `GET /api/jobs/`
+**Endpoint:** `GET /auth/me/`
 
-**Permission:** Public (AllowAny)
+**Description:** Get current authenticated user's information
 
-**Query Parameters:** None
+**Authentication:** Required
 
-**Response:** `200 OK`
+**Success Response (200 OK):**
+```json
+{
+  "user": {
+    "id": 1,
+    "email": "user@example.com",
+    "first_name": "John",
+    "last_name": "Doe",
+    "role": "CANDIDATE",
+    "is_active": true
+  }
+}
+```
+
+---
+
+### 5. Get User Profile
+
+**Endpoint:** `GET /auth/profile/`
+
+**Description:** Get detailed profile of current user (Candidate or Employer)
+
+**Authentication:** Required
+
+**Success Response for Candidate (200 OK):**
+```json
+{
+  "id": 1,
+  "user": {
+    "id": 1,
+    "email": "candidate@example.com",
+    "first_name": "John",
+    "last_name": "Doe",
+    "role": "CANDIDATE"
+  },
+  "phone": "+1234567890",
+  "gender": "MALE",
+  "date_of_birth": "1990-01-15",
+  "headline": "Senior Software Engineer",
+  "about": "Experienced software engineer with 5+ years...",
+  "linkedin": "https://linkedin.com/in/johndoe",
+  "github": "https://github.com/johndoe",
+  "twitter": "https://twitter.com/johndoe",
+  "website": "https://johndoe.com",
+  "profile_picture": "http://localhost:8000/media/profiles/pictures/photo.jpg",
+  "resume": "http://localhost:8000/media/profiles/resumes/resume.pdf",
+  "is_verified": false,
+  "profile_completion": 85,
+  "candidate_skills": [
+    {
+      "id": 1,
+      "skill": {
+        "id": 1,
+        "name": "Python",
+        "category": "Programming"
+      }
+    }
+  ],
+  "education": [
+    {
+      "id": 1,
+      "level": "BACHELOR",
+      "field_of_study": "Computer Science",
+      "institution": "MIT",
+      "start_date": "2010-09-01",
+      "end_date": "2014-06-01",
+      "description": "Bachelor's degree in Computer Science"
+    }
+  ],
+  "certifications": [
+    {
+      "id": 1,
+      "name": "AWS Solutions Architect",
+      "issuing_organization": "Amazon Web Services",
+      "issue_date": "2020-05-01",
+      "expiry_date": "2023-05-01",
+      "credential_url": "https://aws.amazon.com/...",
+      "credential_id": "AWS-123456"
+    }
+  ]
+}
+```
+
+**Success Response for Employer (200 OK):**
+```json
+{
+  "id": 1,
+  "user": {
+    "id": 2,
+    "email": "employer@example.com",
+    "first_name": "Jane",
+    "last_name": "Smith",
+    "role": "EMPLOYER"
+  },
+  "company_name": "Tech Corp",
+  "company_size": "51-200",
+  "industry": "Technology",
+  "description": "Leading technology company...",
+  "website_url": "https://techcorp.com",
+  "linkedin_url": "https://linkedin.com/company/techcorp",
+  "logo": "http://localhost:8000/media/companies/logos/logo.png",
+  "cover_image": "http://localhost:8000/media/companies/covers/cover.jpg",
+  "headquarters_address": "123 Tech Street",
+  "city": "San Francisco",
+  "state": "California",
+  "country": "USA",
+  "postal_code": "94102",
+  "phone": "+1234567890",
+  "contact_email": "contact@techcorp.com",
+  "is_verified": true,
+  "verified_at": "2024-01-15T10:30:00Z"
+}
+```
+
+**Error Response (404 Not Found):**
+```json
+{
+  "error": "Candidate profile not found"
+}
+```
+
+---
+
+### 6. Update User Profile
+
+**Endpoint:** `PATCH /auth/update_profile/` or `PUT /auth/update_profile/`
+
+**Description:** Update current user's profile (partial update with PATCH, full update with PUT)
+
+**Authentication:** Required
+
+**Content-Type:** `multipart/form-data` (for file uploads)
+
+**Request Body (Candidate - multipart/form-data):**
+```
+phone: +1234567890
+gender: MALE
+date_of_birth: 1990-01-15
+headline: Senior Software Engineer
+about: Experienced developer...
+linkedin: https://linkedin.com/in/johndoe
+profile_picture: <file>
+resume: <file>
+```
+
+**Request Body (Employer - multipart/form-data):**
+```
+company_name: Tech Corp
+company_size: 51-200
+industry: Technology
+description: Leading tech company...
+website_url: https://techcorp.com
+logo: <file>
+cover_image: <file>
+city: San Francisco
+state: California
+country: USA
+```
+
+**Success Response (200 OK):**
+```json
+{
+  "id": 1,
+  "phone": "+1234567890",
+  "headline": "Senior Software Engineer",
+  ...
+}
+```
+
+---
+
+### 7. Get User Applications
+
+**Endpoint:** `GET /auth/applications/`
+
+**Description:** Get all applications for the current user (candidate's applications or employer's received applications)
+
+**Authentication:** Required
+
+**Success Response for Candidate (200 OK):**
 ```json
 [
   {
     "id": 1,
-    "title": "Senior Software Engineer",
-    "status": "ACTIVE",
-    "description": "We are looking for...",
-    "requirements": [
-      "3+ years Python experience",
-      "Django knowledge"
-    ],
-    "responsibilities": [
-      "Design and develop web applications",
-      "Write clean code",
-      "Collaborate with team"
-    ],
-    "nice_to_have": [
-      "React experience"
-    ],
-    "job_type": "FULL_TIME",
-    "experience_level": "SENIOR",
-    "salary_min": 80000.00,
-    "salary_max": 120000.00,
-    "benefits": [
-      "Health insurance",
-      "Remote work"
-    ],
-    "is_remote": true,
-    "is_hybrid": false,
-    "city": "San Francisco",
-    "country": "USA",
-    "applications_count": 15,
-    "application_deadline": "2026-02-28T23:59:59Z",
-    "created_at": "2026-01-27T10:00:00Z",
-    "updated_at": "2026-01-27T10:00:00Z"
+    "job": {
+      "id": 5,
+      "title": "Senior Backend Developer",
+      "company": "Tech Corp",
+      "location": "San Francisco, CA"
+    },
+    "status": "PENDING",
+    "cover_letter": "I am very interested...",
+    "expected_salary": 120000.00,
+    "applied_at": "2024-01-20T14:30:00Z"
+  }
+]
+```
+
+**Success Response for Employer (200 OK):**
+```json
+[
+  {
+    "id": 1,
+    "job": {
+      "id": 5,
+      "title": "Senior Backend Developer"
+    },
+    "candidate": {
+      "id": 3,
+      "name": "John Doe",
+      "email": "john@example.com",
+      "headline": "Software Engineer"
+    },
+    "status": "PENDING",
+    "applied_at": "2024-01-20T14:30:00Z"
   }
 ]
 ```
 
 ---
 
-### 11. Get Active Jobs (Alternative)
-**Endpoint:** `GET /api/jobs/get_jobs/`
+### 8. Get User Notifications
 
-**Permission:** Public (AllowAny)
+**Endpoint:** `GET /auth/notifications/`
 
-**Response:** Same as endpoint #5
+**Description:** Get all notifications for the current user
+
+**Authentication:** Required
+
+**Success Response (200 OK):**
+```json
+[
+  {
+    "id": 1,
+    "notification_type": "APPLICATION_STATUS",
+    "title": "Application Status Updated",
+    "content": "Your application for Senior Backend Developer has been reviewed",
+    "is_read": false,
+    "created_at": "2024-01-20T15:00:00Z"
+  }
+]
+```
 
 ---
 
-### 12. Get Single Job
-**Endpoint:** `GET /api/jobs/{id}/`
+### 9. Get User Reviews
 
-**Permission:** Public (AllowAny)
+**Endpoint:** `GET /auth/reviews/`
 
-**Example:** `GET /api/jobs/1/`
+**Description:** Get all reviews written by or about the current user
 
-**Response:** `200 OK`
+**Authentication:** Required
+
+**Success Response (200 OK):**
+```json
+[
+  {
+    "id": 1,
+    "company": {
+      "id": 2,
+      "company_name": "Tech Corp"
+    },
+    "rating": 5,
+    "review_text": "Great company to work for!",
+    "created_at": "2024-01-15T10:00:00Z"
+  }
+]
+```
+
+---
+
+### 10. Get Saved Jobs
+
+**Endpoint:** `GET /auth/saved_jobs/`
+
+**Description:** Get all jobs saved by the current user
+
+**Authentication:** Required
+
+**Success Response (200 OK):**
+```json
+[
+  {
+    "id": 1,
+    "job": {
+      "id": 5,
+      "title": "Senior Backend Developer",
+      "company": "Tech Corp",
+      "location": "San Francisco, CA",
+      "employment_type": "FULL_TIME",
+      "salary_min": 100000.00,
+      "salary_max": 150000.00
+    },
+    "notes": "Interesting position, apply by end of month",
+    "created_at": "2024-01-18T12:00:00Z"
+  }
+]
+```
+
+---
+
+### 11. List Jobs
+
+**Endpoint:** `GET /jobs/`
+
+**Description:** Get list of all active job postings
+
+**Authentication:** Not required
+
+**Query Parameters:**
+- None (returns all active jobs)
+
+**Success Response (200 OK):**
+```json
+[
+  {
+    "id": 1,
+    "title": "Senior Backend Developer",
+    "employer": {
+      "id": 2,
+      "company_name": "Tech Corp",
+      "logo": "http://localhost:8000/media/companies/logos/logo.png"
+    },
+    "employment_type": "FULL_TIME",
+    "job_type": "REMOTE",
+    "experience_level": "SENIOR",
+    "location": "San Francisco, CA",
+    "salary_min": 100000.00,
+    "salary_max": 150000.00,
+    "currency": "USD",
+    "is_salary_disclosed": true,
+    "status": "ACTIVE",
+    "posted_at": "2024-01-15T10:00:00Z",
+    "application_deadline": "2024-02-15",
+    "applications_count": 25
+  }
+]
+```
+
+---
+
+### 12. Get Job Details
+
+**Endpoint:** `GET /jobs/{id}/`
+
+**Description:** Get detailed information about a specific job
+
+**Authentication:** Not required
+
+**Success Response (200 OK):**
 ```json
 {
   "id": 1,
-  "title": "Senior Software Engineer",
-  "status": "ACTIVE",
-  "description": "We are looking for...",
-  "requirements": [
-    "3+ years Python experience",
-    "Django knowledge"
-  ],
+  "title": "Senior Backend Developer",
+  "description": "We are looking for an experienced backend developer...",
   "responsibilities": [
-    "Design and develop web applications",
-    "Write clean code"
+    "Design and develop scalable backend services",
+    "Collaborate with frontend team",
+    "Code review and mentoring"
+  ],
+  "requirements": [
+    "5+ years of Python/Django experience",
+    "Strong understanding of REST APIs",
+    "Experience with PostgreSQL"
   ],
   "nice_to_have": [
-    "React experience",
-    "AWS knowledge"
+    "Experience with Docker and Kubernetes",
+    "Frontend development skills"
   ],
-  "job_type": "FULL_TIME",
-  "experience_level": "SENIOR",
-  "salary_min": 80000.00,
-  "salary_max": 120000.00,
   "benefits": [
     "Health insurance",
-    "Remote work",
-    "401k matching"
+    "401k matching",
+    "Remote work options",
+    "Professional development budget"
   ],
-  "is_remote": true,
-  "is_hybrid": false,
+  "employer": {
+    "id": 2,
+    "company_name": "Tech Corp",
+    "logo": "http://localhost:8000/media/companies/logos/logo.png",
+    "industry": "Technology",
+    "company_size": "51-200",
+    "website_url": "https://techcorp.com"
+  },
+  "employment_type": "FULL_TIME",
+  "job_type": "REMOTE",
+  "experience_level": "SENIOR",
+  "salary_min": 100000.00,
+  "salary_max": 150000.00,
+  "currency": "USD",
+  "is_salary_disclosed": true,
+  "location": "San Francisco, CA",
   "city": "San Francisco",
+  "state": "California",
   "country": "USA",
-  "applications_count": 15,
-  "application_deadline": "2026-02-28T23:59:59Z",
-  "created_at": "2026-01-27T10:00:00Z",
-  "updated_at": "2026-01-27T10:00:00Z"
+  "categories": [
+    {
+      "id": 1,
+      "name": "Software Development",
+      "slug": "software-development"
+    }
+  ],
+  "required_skills": [
+    {
+      "id": 1,
+      "skill": {
+        "id": 1,
+        "name": "Python",
+        "category": "Programming"
+      },
+      "is_required": true,
+      "minimum_years": 5
+    },
+    {
+      "id": 2,
+      "skill": {
+        "id": 2,
+        "name": "Django",
+        "category": "Framework"
+      },
+      "is_required": true,
+      "minimum_years": 3
+    }
+  ],
+  "status": "ACTIVE",
+  "applications_count": 25,
+  "posted_at": "2024-01-15T10:00:00Z",
+  "application_deadline": "2024-02-15",
+  "expires_at": "2024-02-15T23:59:59Z"
 }
 ```
 
 ---
 
 ### 13. Create Job Posting
-**Endpoint:** `POST /api/jobs/`
 
-**Permission:** Authenticated
+**Endpoint:** `POST /jobs/`
 
-**Headers:**
-```
-Authorization: Bearer <access_token>
-Content-Type: application/json
-```
+**Description:** Create a new job posting (Employer only)
+
+**Authentication:** Required (Employer role)
 
 **Request Body:**
 ```json
 {
-  "title": "Senior Software Engineer",
-  "description": "We are looking for a talented developer...",
-  "status": "ACTIVE",
-  "job_type": "FULL_TIME",
-  "experience_level": "SENIOR",
-  "salary_min": 80000,
-  "salary_max": 120000,
-  "is_remote": true,
-  "is_hybrid": false,
-  "city": "San Francisco",
-  "country": "USA",
-  "application_deadline": "2026-02-28T23:59:59Z",
+  "title": "Senior Backend Developer",
+  "description": "We are looking for an experienced backend developer...",
   "responsibilities": [
-    "Design and develop web applications",
-    "Write clean, maintainable code"
+    "Design and develop scalable backend services",
+    "Collaborate with frontend team"
   ],
   "requirements": [
-    "3+ years Python experience",
-    "Strong Django knowledge"
+    "5+ years of Python/Django experience",
+    "Strong understanding of REST APIs"
   ],
   "nice_to_have": [
-    "React experience",
-    "AWS knowledge"
+    "Experience with Docker and Kubernetes"
   ],
   "benefits": [
     "Health insurance",
-    "Remote work",
     "401k matching"
-  ]
+  ],
+  "employment_type": "FULL_TIME",
+  "job_type": "REMOTE",
+  "experience_level": "SENIOR",
+  "salary_min": 100000.00,
+  "salary_max": 150000.00,
+  "currency": "USD",
+  "is_salary_disclosed": true,
+  "location": "San Francisco, CA",
+  "city": "San Francisco",
+  "state": "California",
+  "country": "USA",
+  "application_deadline": "2024-02-15",
+  "status": "DRAFT"
 }
 ```
 
-**Response:** `201 CREATED`
+**Success Response (201 Created):**
 ```json
 {
   "id": 1,
-  "title": "Senior Software Engineer",
-  "description": "We are looking for a talented developer...",
-  "status": "ACTIVE",
-  "created_at": "2026-01-27T10:00:00Z",
-  "updated_at": "2026-01-27T10:00:00Z"
-}
-```
-
-**Error Response:**
-- `400 BAD REQUEST` - If user is not an employer
-```json
-{
-  "non_field_errors": ["Only employers can create job postings"]
+  "title": "Senior Backend Developer",
+  "status": "DRAFT",
+  ...
 }
 ```
 
 ---
 
-### 14. Update Job Posting (Partial)
-**Endpoint:** `PATCH /api/jobs/{id}/`
+### 14. Update Job Posting
 
-**Permission:** Authenticated
+**Endpoint:** `PUT /jobs/{id}/` or `PATCH /jobs/{id}/`
 
-**Headers:**
-```
-Authorization: Bearer <access_token>
-Content-Type: application/json
-```
+**Description:** Update job posting (Employer only, must own the job)
 
-**Example:** `PATCH /api/jobs/1/`
+**Authentication:** Required (Employer role)
 
-**Request Body:** (only include fields you want to update)
-```json
-{
-  "status": "CLOSED",
-  "description": "Updated description"
-}
-```
+**Request Body (same as Create Job):**
 
-**Response:** `200 OK`
+**Success Response (200 OK):**
 ```json
 {
   "id": 1,
-  "title": "Senior Software Engineer",
-  "description": "Updated description",
-  "status": "CLOSED",
-  "created_at": "2026-01-27T10:00:00Z",
-  "updated_at": "2026-01-27T12:00:00Z"
+  "title": "Senior Backend Developer",
+  ...
 }
 ```
 
 ---
 
-### 15. Update Job Posting (Full)
-**Endpoint:** `PUT /api/jobs/{id}/`
+### 15. Delete Job Posting
 
-**Permission:** Authenticated
+**Endpoint:** `DELETE /jobs/{id}/`
 
-**Headers:**
-```
-Authorization: Bearer <access_token>
-Content-Type: application/json
-```
+**Description:** Delete job posting (Employer only, must own the job)
 
-**Request Body:** (must include all required fields)
-```json
-{
-  "title": "Senior Software Engineer",
-  "description": "Updated full description",
-  "status": "ACTIVE",
-  // ... all required fields
-}
-```
+**Authentication:** Required (Employer role)
 
-**Response:** `200 OK`
+**Success Response (204 No Content):**
+No response body
 
 ---
 
-### 16. Delete Job Posting
-**Endpoint:** `DELETE /api/jobs/{id}/`
+### 16. Apply for Job
 
-**Permission:** Authenticated
+**Endpoint:** `POST /jobs/{id}/apply/`
 
-**Headers:**
+**Description:** Submit an application for a job posting
+
+**Authentication:** Required (Candidate role)
+
+**Content-Type:** `multipart/form-data`
+
+**Request Body (multipart/form-data):**
 ```
-Authorization: Bearer <access_token>
-```
-
-**Example:** `DELETE /api/jobs/1/`
-
-**Response:** `204 NO CONTENT`
-
----
-
-### 17. Apply to Job
-**Endpoint:** `POST /api/jobs/{id}/apply/`
-
-**Permission:** Authenticated (Candidate only)
-
-**Headers:**
-```
-Authorization: Bearer <access_token>
-Content-Type: multipart/form-data
+cover_letter: I am very interested in this position...
+resume: <file> (optional if already uploaded to profile)
+expected_salary: 120000.00
+available_from: 2024-03-01
 ```
 
-**Example:** `POST /api/jobs/1/apply/`
+**Request Fields:**
+- `cover_letter` (string, optional): Cover letter text
+- `resume` (file, optional): Resume file upload
+- `expected_salary` (decimal, optional): Expected salary
+- `available_from` (date, optional): Availability start date
 
-**Request Body:** (multipart/form-data)
-```
-cover_letter: "I am very interested in this position..."
-resume: <file>
-```
-
-**Note:** The `job` and `candidate` fields are automatically set from context, not from request data.
-
-**Response:** `201 CREATED`
+**Success Response (201 Created):**
 ```json
 {
   "message": "Application submitted successfully",
@@ -517,139 +727,118 @@ resume: <file>
 }
 ```
 
-**Error Responses:**
-- `400 BAD REQUEST` - If user is not a candidate
+**Error Response (400 Bad Request):**
 ```json
 {
-  "non_field_errors": ["Only candidates can apply for job"]
-}
-```
-
-- `400 BAD REQUEST` - If job is not accepting applications
-```json
-{
-  "non_field_errors": ["This job is no more acepting applications"]
-}
-```
-
-- `400 BAD REQUEST` - If already applied
-```json
-{
-  "non_field_errors": ["You have already applied for this job"]
-}
-```
-
-- `400 BAD REQUEST` - If not authenticated or not a candidate
-```json
-{
-  "detail": "Authentication credentials were not provided."
+  "error": "You have already applied for this job"
 }
 ```
 
 ---
 
-## Complete API Endpoints Summary
+## Status Codes
 
-### Authentication
-| Method | Endpoint | Permission | Description |
-|--------|----------|------------|-------------|
-| POST | `/api/auth/register/` | Public | Register new user |
-| POST | `/api/auth/login/` | Public | Login user |
-| GET | `/api/auth/me/` | Authenticated | Get current user |
-| POST | `/api/auth/refresh/` | Public | Refresh access token |
-
-### Jobs
-| Method | Endpoint | Permission | Description |
-|--------|----------|------------|-------------|
-| GET | `/api/jobs/` | Public | List all active jobs |
-| POST | `/api/jobs/` | Authenticated | Create new job |
-| GET | `/api/jobs/{id}/` | Public | Get single job |
-| PUT | `/api/jobs/{id}/` | Authenticated | Full update job |
-| PATCH | `/api/jobs/{id}/` | Authenticated | Partial update job |
-| DELETE | `/api/jobs/{id}/` | Authenticated | Delete job |
-| GET | `/api/jobs/get_jobs/` | Public | List active jobs (alt) |
-| POST | `/api/jobs/{id}/apply/` | Authenticated | Apply to job |
-
-### User Data (New)
-| Method | Endpoint | Permission | Description |
-|--------|----------|------------|-------------|
-| GET | `/api/auth/profile/` | Authenticated | Get user profile |
-| GET | `/api/auth/applications/` | Authenticated | Get user applications |
-| GET | `/api/auth/notifications/` | Authenticated | Get user notifications |
-| GET | `/api/auth/saved_jobs/` | Authenticated | Get saved jobs |
-| GET | `/api/auth/reviews/` | Authenticated | Get employer reviews |
+- `200 OK` - Request successful
+- `201 Created` - Resource created successfully
+- `204 No Content` - Resource deleted successfully
+- `400 Bad Request` - Invalid request data
+- `401 Unauthorized` - Authentication required or failed
+- `403 Forbidden` - User doesn't have permission
+- `404 Not Found` - Resource not found
+- `500 Internal Server Error` - Server error
 
 ---
 
-## Error Responses
+## Enumerations
 
-### 400 Bad Request
-```json
-{
-  "field_name": ["Error message"]
-}
-```
+### User Roles
+- `ADMIN` - Administrator
+- `EMPLOYER` - Employer/Company
+- `CANDIDATE` - Job Seeker
 
-### 401 Unauthorized
-```json
-{
-  "detail": "Authentication credentials were not provided."
-}
-```
+### Employment Types
+- `FULL_TIME` - Full-time
+- `PART_TIME` - Part-time
+- `CONTRACT` - Contract
+- `INTERNSHIP` - Internship
+- `FREELANCE` - Freelance
 
-### 403 Forbidden
-```json
-{
-  "detail": "You do not have permission to perform this action."
-}
-```
+### Location Types (Job Type)
+- `REMOTE` - Remote
+- `ON_SITE` - On-site
+- `HYBRID` - Hybrid
 
-### 404 Not Found
-```json
-{
-  "detail": "Not found."
-}
-```
+### Experience Levels
+- `ENTRY` - Entry Level
+- `INTERMEDIATE` - Intermediate
+- `SENIOR` - Senior
+- `LEAD` - Lead
+- `EXECUTIVE` - Executive
 
-### 500 Internal Server Error
-```json
-{
-  "detail": "Internal server error."
-}
-```
+### Job Status
+- `DRAFT` - Draft
+- `ACTIVE` - Active
+- `CLOSED` - Closed
+- `EXPIRED` - Expired
+
+### Application Status
+- `PENDING` - Pending
+- `REVIEWED` - Reviewed
+- `SHORTLISTED` - Shortlisted
+- `INTERVIEW` - Interview Scheduled
+- `REJECTED` - Rejected
+- `ACCEPTED` - Accepted
+- `WITHDRAWN` - Withdrawn
+
+### Gender
+- `MALE` - Male
+- `FEMALE` - Female
+- `OTHER` - Other
+
+### Education Level
+- `HIGH_SCHOOL` - High School
+- `ASSOCIATE` - Associate Degree
+- `BACHELOR` - Bachelor's Degree
+- `MASTER` - Master's Degree
+- `PHD` - PhD
+- `CERTIFICATE` - Certificate
+- `DIPLOMA` - Diploma
+
+### Company Size
+- `1-10` - 1-10 employees
+- `11-50` - 11-50 employees
+- `51-200` - 51-200 employees
+- `201-500` - 201-500 employees
+- `500+` - 500+ employees
 
 ---
 
-## Authentication Flow
+## Error Handling
 
-1. **Register:** `POST /api/auth/register/`
-2. **Login:** `POST /api/auth/login/` → Get access & refresh tokens
-3. **Use Access Token:** Include in header: `Authorization: Bearer <access_token>`
-4. **Refresh Token:** When access expires, `POST /api/auth/refresh/` with refresh token
-5. **Get User Info:** `GET /api/auth/me/`
+All error responses follow this format:
 
----
+```json
+{
+  "field_name": ["Error message"],
+  "another_field": ["Another error message"]
+}
+```
 
-## Job Application Flow
+Or for general errors:
 
-1. **Browse Jobs:** `GET /api/jobs/`
-2. **View Job Details:** `GET /api/jobs/{id}/`
-3. **Login/Register:** If not authenticated
-4. **Apply:** `POST /api/jobs/{id}/apply/` with cover letter and resume
+```json
+{
+  "detail": "Error message"
+}
+```
 
 ---
 
 ## Notes
 
-- All timestamps are in ISO 8601 format (UTC)
-- File uploads use `multipart/form-data` encoding
-- JSON fields (responsibilities, requirements, nice_to_have, benefits) accept arrays of strings
-- Job status options: `ACTIVE`, `CLOSED`, `DRAFT`, etc. (check JobPosting.Status enum)
-- Job type options: `FULL_TIME`, `PART_TIME`, `CONTRACT`, `INTERNSHIP`
-- Experience level options: `ENTRY`, `JUNIOR`, `SENIOR`, `LEAD`, `MANAGER`
-- User roles: `CANDIDATE`, `EMPLOYER`
-- Application status: `PENDING`, `REVIEWED`, `SHORTLISTED`, `INTERVIEW`, `REJECTED`, `ACCEPTED`, `WITHDRAWN`
-- Password validation: Passwords must match in registration
-- Only employers can create job postings
-- Only candidates can apply to jobs
-- Users cannot apply to the same job twice
+1. All datetime fields are in ISO 8601 format (e.g., `2024-01-20T14:30:00Z`)
+2. All file uploads should use `multipart/form-data` content type
+3. JWT tokens expire after a certain period (configured in Django settings)
+4. Refresh tokens can be used to obtain new access tokens
+5. Profile completion percentage is automatically calculated for candidates
+6. Job application count is automatically updated when applications are submitted
