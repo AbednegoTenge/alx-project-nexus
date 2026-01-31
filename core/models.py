@@ -3,6 +3,7 @@ from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.utils.translation import gettext_lazy as _
 from django.core.validators import MinValueValidator, MaxValueValidator, ValidationError
 from django.utils.text import slugify
+from .static_backend import PublicMediaStorage, PrivateMediaStorage
 
 class UserManager(BaseUserManager):
     use_in_migrations = True
@@ -89,8 +90,8 @@ class CandidateProfile(BaseModel):
     twitter = models.URLField(blank=True, help_text='Your Twitter profile URL')
     website = models.URLField(blank=True, help_text='Your website URL')
     # Media links
-    profile_picture = models.ImageField(upload_to='profiles/pictures', blank=True, null=True)
-    resume = models.FileField(upload_to='profiles/resumes', blank=True, null=True)
+    profile_picture = models.ImageField(storage=PublicMediaStorage, upload_to='profiles/pictures', blank=True, null=True)
+    resume = models.FileField(storage=PrivateMediaStorage, upload_to='profiles/resumes', blank=True, null=True)
     is_verified = models.BooleanField(default=False)
 
     @property
@@ -252,8 +253,8 @@ class EmployerProfile(BaseModel):
     linkedin_url = models.URLField(blank=True)
     
     # Media
-    logo = models.ImageField(upload_to='companies/logos/', null=True, blank=True)
-    cover_image = models.ImageField(upload_to='companies/covers/', null=True, blank=True)
+    logo = models.ImageField(storage=PublicMediaStorage, upload_to='companies/logos/', null=True, blank=True)
+    cover_image = models.ImageField(storage=PublicMediaStorage, upload_to='companies/covers/', null=True, blank=True)
     
     # Contact
     headquarters_address = models.TextField(blank=True)
@@ -264,7 +265,7 @@ class EmployerProfile(BaseModel):
     phone = models.CharField(max_length=20, blank=True)
     contact_email = models.EmailField(blank=True)
     
-    # Verification
+    # Verification``
     is_verified = models.BooleanField(default=False)
     verified_at = models.DateTimeField(null=True, blank=True)
 
@@ -455,7 +456,7 @@ class Application(BaseModel):
     
     # Application Data
     cover_letter = models.TextField(blank=True)
-    resume = models.FileField(upload_to='applications/resumes/', null=True, blank=True)
+    resume = models.FileField(storage=PrivateMediaStorage, upload_to='applications/resumes/', null=True, blank=True)
     expected_salary = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     available_from = models.DateField(null=True, blank=True)
     

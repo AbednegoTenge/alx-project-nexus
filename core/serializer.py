@@ -4,7 +4,7 @@ from django.contrib.auth import authenticate
 from django.db import transaction
 from .models import (
     User, Application, JobPosting, CandidateProfile, EmployerProfile,
-    CandidateSkill, Education, Certification, Address, Skill
+    CandidateSkill, Education, Certification, Address, Skill, Notification, CompanyReview
 )
 import os
 
@@ -80,6 +80,7 @@ class TokenRefreshResponseSerializer(serializers.Serializer):
 
 
 class ApplyJobSerializer(serializers.ModelSerializer):
+    """Serializer for job application (create)"""
     resume = serializers.FileField(required=False)
     class Meta:
         model = Application
@@ -131,6 +132,7 @@ class ApplyJobSerializer(serializers.ModelSerializer):
         )
 
 class JobPostingSerializer(serializers.ModelSerializer):
+    """Serializer for job posting (create and update)"""
     class Meta:
         model = JobPosting
         fields = ['id', 'title', 'description', 'requirements', 'responsibilities', 'experience_level', 'employment_type', 'status', 'job_type', 'created_at', 'updated_at']
@@ -169,14 +171,9 @@ class JobPostingSerializer(serializers.ModelSerializer):
         return JobPosting.objects.create(**validated_data)
 
 
-    def update(self, instance, validated_data):
-        for field, value in validated_data.items():
-            setattr(instance, field, value)
-        instance.save()
-        return instance
-
 
 class GetJobSerializer(serializers.ModelSerializer):
+    """Serializer for job (read only)"""
     class Meta:
         model = JobPosting
         fields = [
@@ -190,12 +187,14 @@ class GetJobSerializer(serializers.ModelSerializer):
 # ============= Nested Serializers (must come before CandidateProfileSerializer) =============
 
 class SkillSerializer(serializers.ModelSerializer):
+    """Serializer for skill (read and update)"""
     class Meta:
         model = Skill
         fields = ['id', 'name', 'category', 'description']
 
 
 class CandidateSkillSerializer(serializers.ModelSerializer):
+    """Serializer for candidate skill (read and update)"""
     skill_id = serializers.IntegerField(write_only=True)
     skill = SkillSerializer(read_only=True)
     
@@ -226,6 +225,7 @@ class EducationSerializer(serializers.ModelSerializer):
 
 
 class CertificationSerializer(serializers.ModelSerializer):
+    """Serializer for certification (read and update)"""
     class Meta:
         model = Certification
         fields = ['id', 'name', 'issuing_organization', 'issue_date', 'expiry_date', 'credential_id', 'credential_url']
@@ -474,3 +474,25 @@ class EmployerProfileSerializer(serializers.ModelSerializer):
         
         instance.save()
         return instance
+
+
+class NotificationSerializer(serializers.ModelSerializer):
+    """Serializer for notification"""
+    class Meta:
+        model = Notification
+        fields = ['id', 'user', 'title', 'content', 'notification_type', 'is_read', 'created_at', 'updated_at']
+
+
+class ReviewSerializer(serializers.ModelSerializer):
+    """Serializer for company review"""
+    class Meta:
+        model = CompanyReview
+        fields = ['id', 'company', 'reviewer', 'rating', 'review_text', 'created_at', 'updated_at']
+    
+
+class ApplicationSerializer(serializers.ModelSerializer):
+    """Serilizer for Applications"""
+
+    class Meta:
+        model=Application
+        fields='__all__'
