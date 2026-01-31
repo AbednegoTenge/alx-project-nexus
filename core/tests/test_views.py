@@ -2,7 +2,7 @@ import pytest
 from rest_framework.test import APIClient
 from django.contrib.auth import get_user_model
 from django.urls import reverse
-from core.models import CandidateProfile, Application, JobPosting, EmployerProfile
+from core.models import Application, JobPosting
 
 User = get_user_model()
 
@@ -20,7 +20,7 @@ def test_login_endpoint():
     )
 
     # make a login request
-    url = reverse('login')
+    url = reverse('auth-login')
     data = {
         'email': 'testuser@example.com',
         'password': 'testpassword'
@@ -36,7 +36,7 @@ def test_login_endpoint():
 def test_register_endpoint():
     client = APIClient()
 
-    url = reverse('register')
+    url = reverse('auth-register')
     data = {
         'email': 'testuser@example.com',
         'first_name': 'Test',
@@ -69,18 +69,16 @@ def test_me_endpoint_authenticated():
 
     client.force_authenticate(user=user)
     
-    url = reverse('me')
+    url = reverse('auth-me')
     response = client.get(url)
     
     assert response.status_code == 200
-    assert 'dashboard' in response.data
-    assert response.data['dashboard']['status'] == 'active'
     assert response.data['user']['email'] == 'me@example.com'
 
 @pytest.mark.django_db
 def test_me_endpoint_unauthenticated():
     client = APIClient()
-    url = reverse('me')
+    url = reverse('auth-me')
     response = client.get(url)
     
     assert response.status_code == 401

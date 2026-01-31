@@ -3,6 +3,7 @@ from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.utils.translation import gettext_lazy as _
 from django.core.validators import MinValueValidator, MaxValueValidator, ValidationError
 from django.utils.text import slugify
+from .static_backend import PublicMediaStorage, PrivateMediaStorage
 
 class UserManager(BaseUserManager):
     use_in_migrations = True
@@ -89,8 +90,8 @@ class CandidateProfile(BaseModel):
     twitter = models.URLField(blank=True, help_text='Your Twitter profile URL')
     website = models.URLField(blank=True, help_text='Your website URL')
     # Media links
-    profile_picture = models.ImageField(upload_to='profiles/pictures', blank=True, null=True)
-    resume = models.FileField(upload_to='profiles/resumes', blank=True, null=True)
+    profile_picture = models.ImageField(storage=PublicMediaStorage, upload_to='profiles/pictures', blank=True, null=True)
+    resume = models.FileField(storage=PrivateMediaStorage, upload_to='profiles/resumes', blank=True, null=True)
     is_verified = models.BooleanField(default=False)
 
     @property
@@ -252,8 +253,8 @@ class EmployerProfile(BaseModel):
     linkedin_url = models.URLField(blank=True)
     
     # Media
-    logo = models.ImageField(upload_to='companies/logos/', null=True, blank=True)
-    cover_image = models.ImageField(upload_to='companies/covers/', null=True, blank=True)
+    logo = models.ImageField(storage=PublicMediaStorage, upload_to='companies/logos/', null=True, blank=True)
+    cover_image = models.ImageField(storage=PublicMediaStorage, upload_to='companies/covers/', null=True, blank=True)
     
     # Contact
     headquarters_address = models.TextField(blank=True)
@@ -264,7 +265,7 @@ class EmployerProfile(BaseModel):
     phone = models.CharField(max_length=20, blank=True)
     contact_email = models.EmailField(blank=True)
     
-    # Verification
+    # Verification``
     is_verified = models.BooleanField(default=False)
     verified_at = models.DateTimeField(null=True, blank=True)
 
@@ -311,13 +312,18 @@ class Category(BaseModel):
 
 
 class JobPosting(BaseModel):
-    class JobType(models.TextChoices):
+    class EmploymentType(models.TextChoices):
         FULL_TIME = 'FULL_TIME', _('Full-time')
         PART_TIME = 'PART_TIME', _('Part-time')
         CONTRACT = 'CONTRACT', _('Contract')
         INTERNSHIP = 'INTERNSHIP', _('Internship')
         FREELANCE = 'FREELANCE', _('Freelance')
 
+    class LocationType(models.TextChoices):
+        REMOTE = 'REMOTE', _('Remote')
+        ON_SITE = 'ON_SITE', _('On-site')
+        HYBRID = 'HYBRID', _('Hybrid')
+    
     class ExperienceLevel(models.TextChoices):
         ENTRY = 'ENTRY', _('Entry Level')
         INTERMEDIATE = 'INTERMEDIATE', _('Intermediate')
@@ -347,7 +353,8 @@ class JobPosting(BaseModel):
     benefits = models.JSONField(default=list, blank=True)
     
     # Job Type
-    job_type = models.CharField(max_length=20, choices=JobType.choices)
+    employment_type = models.CharField(max_length=20, choices=EmploymentType.choices)
+    job_type = models.CharField(max_length=20, choices=LocationType.choices)
     experience_level = models.CharField(max_length=20, choices=ExperienceLevel.choices)
     
     # Salary
@@ -373,8 +380,6 @@ class JobPosting(BaseModel):
     city = models.CharField(max_length=100, blank=True)
     state = models.CharField(max_length=100, blank=True)
     country = models.CharField(max_length=100, blank=True)
-    is_remote = models.BooleanField(default=False)
-    is_hybrid = models.BooleanField(default=False)
     
     # Categories
     categories = models.ManyToManyField(Category, related_name='jobs', blank=True)
@@ -387,12 +392,10 @@ class JobPosting(BaseModel):
     )
     
     # Other Details
-    number_of_positions = models.IntegerField(default=1)
     application_deadline = models.DateField(null=True, blank=True)
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.DRAFT)
     
     # Metrics
-    views_count = models.IntegerField(default=0)
     applications_count = models.IntegerField(default=0)
     
     # Dates
@@ -411,10 +414,6 @@ class JobPosting(BaseModel):
 
     def __str__(self):
         return f"{self.title} at {self.employer.company_name}"
-
-    def increment_views(self):
-        self.views_count += 1
-        self.save(update_fields=['views_count'])
 
     def clean(self):
         if self.salary_min and self.salary_max:
@@ -457,7 +456,7 @@ class Application(BaseModel):
     
     # Application Data
     cover_letter = models.TextField(blank=True)
-    resume = models.FileField(upload_to='applications/resumes/', null=True, blank=True)
+    resume = models.FileField(storage=PrivateMediaStorage, upload_to='applications/resumes/', null=True, blank=True)
     expected_salary = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     available_from = models.DateField(null=True, blank=True)
     
@@ -568,19 +567,7 @@ class CompanyReview(BaseModel):
     
     # Review Content
     rating = models.IntegerField(validators=[MinValueValidator(1), MaxValueValidator(5)])
-    title = models.CharField(max_length=200)
     review_text = models.TextField()
-    pros = models.TextField(blank=True)
-    cons = models.TextField(blank=True)
-    
-    # Reviewer Context
-    job_title = models.CharField(max_length=200, blank=True)
-    is_current_employee = models.BooleanField(default=False)
-    is_anonymous = models.BooleanField(default=False)
-    
-    # Verification & Engagement
-    is_verified = models.BooleanField(default=False)
-    helpful_count = models.IntegerField(default=0)
 
     class Meta:
         verbose_name = 'Company Review'
@@ -598,6 +585,7 @@ class Notification(BaseModel):
         JOB_ALERT = 'JOB_ALERT', _('Job Alert')
         INTERVIEW = 'INTERVIEW', _('Interview Scheduled')
         SYSTEM = 'SYSTEM', _('System Notification')
+        APPLICATION = 'APPLICATION', _('Application')
 
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notifications')
     notification_type = models.CharField(max_length=30, choices=NotificationType.choices)

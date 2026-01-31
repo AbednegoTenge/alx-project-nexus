@@ -1,0 +1,844 @@
+{
+    "info": {
+        "_postman_id": "job-portal-api-collection",
+        "name": "Job Portal API",
+        "description": "Complete API collection for Job Portal application with authentication, job management, and application features",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "auth": {
+        "type": "bearer",
+        "bearer": [
+            {
+                "key": "token",
+                "value": "{{access_token}}",
+                "type": "string"
+            }
+        ]
+    },
+    "variable": [
+        {
+            "key": "base_url",
+            "value": "http://localhost:8000/api",
+            "type": "string"
+        },
+        {
+            "key": "access_token",
+            "value": "",
+            "type": "string"
+        },
+        {
+            "key": "refresh_token",
+            "value": "",
+            "type": "string"
+        },
+        {
+            "key": "candidate_token",
+            "value": "",
+            "type": "string"
+        },
+        {
+            "key": "employer_token",
+            "value": "",
+            "type": "string"
+        },
+        {
+            "key": "job_id",
+            "value": "1",
+            "type": "string"
+        }
+    ],
+    "item": [
+        {
+            "name": "Authentication",
+            "item": [
+                {
+                    "name": "Register User (Candidate)",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "if (pm.response.code === 201) {",
+                                    "    var jsonData = pm.response.json();",
+                                    "    pm.environment.set(\"user_id\", jsonData.user.id);",
+                                    "}"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"email\": \"candidate@example.com\",\n  \"password\": \"SecurePass123!\",\n  \"password2\": \"SecurePass123!\",\n  \"first_name\": \"John\",\n  \"last_name\": \"Doe\",\n  \"role\": \"CANDIDATE\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/auth/register/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "auth",
+                                "register",
+                                ""
+                            ]
+                        },
+                        "description": "Register a new candidate user"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Register User (Employer)",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "if (pm.response.code === 201) {",
+                                    "    var jsonData = pm.response.json();",
+                                    "    pm.environment.set(\"employer_id\", jsonData.user.id);",
+                                    "}"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"email\": \"employer@example.com\",\n  \"password\": \"SecurePass123!\",\n  \"password2\": \"SecurePass123!\",\n  \"first_name\": \"Jane\",\n  \"last_name\": \"Smith\",\n  \"role\": \"EMPLOYER\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/auth/register/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "auth",
+                                "register",
+                                ""
+                            ]
+                        },
+                        "description": "Register a new employer user"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Login - Candidate",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "if (pm.response.code === 200) {",
+                                    "    var jsonData = pm.response.json();",
+                                    "    pm.collectionVariables.set('access_token', jsonData.access);",
+                                    "    pm.collectionVariables.set('refresh_token', jsonData.refresh);",
+                                    "    pm.collectionVariables.set('candidate_token', jsonData.access);",
+                                    "    pm.environment.set('access_token', jsonData.access);",
+                                    "    pm.environment.set('refresh_token', jsonData.refresh);",
+                                    "}"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"email\": \"candidate@example.com\",\n  \"password\": \"SecurePass123!\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/auth/login/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "auth",
+                                "login",
+                                ""
+                            ]
+                        },
+                        "description": "Authenticate candidate user and receive JWT tokens"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Login - Employer",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "if (pm.response.code === 200) {",
+                                    "    var jsonData = pm.response.json();",
+                                    "    pm.collectionVariables.set('access_token', jsonData.access);",
+                                    "    pm.collectionVariables.set('refresh_token', jsonData.refresh);",
+                                    "    pm.collectionVariables.set('employer_token', jsonData.access);",
+                                    "    pm.environment.set('access_token', jsonData.access);",
+                                    "    pm.environment.set('refresh_token', jsonData.refresh);",
+                                    "}"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"email\": \"employer@example.com\",\n  \"password\": \"SecurePass123!\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/auth/login/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "auth",
+                                "login",
+                                ""
+                            ]
+                        },
+                        "description": "Authenticate employer user and receive JWT tokens"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Refresh Token",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "if (pm.response.code === 200) {",
+                                    "    var jsonData = pm.response.json();",
+                                    "    pm.collectionVariables.set(\"access_token\", jsonData.access);",
+                                    "    pm.environment.set(\"access_token\", jsonData.access);",
+                                    "}"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"refresh\": \"{{refresh_token}}\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/auth/refresh/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "auth",
+                                "refresh",
+                                ""
+                            ]
+                        },
+                        "description": "Get new access token using refresh token"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Get Current User - Candidate",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/auth/me/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "auth",
+                                "me",
+                                ""
+                            ]
+                        },
+                        "description": "Get current authenticated candidate user information"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Get Current User - Employer",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/auth/me/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "auth",
+                                "me",
+                                ""
+                            ]
+                        },
+                        "description": "Get current authenticated employer user information"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Get User Profile",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/auth/profile/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "auth",
+                                "profile",
+                                ""
+                            ]
+                        },
+                        "description": "Get detailed profile of current user (Candidate or Employer)"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Update Profile (Candidate) - PATCH",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [],
+                        "body": {
+                            "mode": "formdata",
+                            "formdata": [
+                                {
+                                    "key": "phone",
+                                    "value": "+1234567890",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "gender",
+                                    "value": "MALE",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "date_of_birth",
+                                    "value": "1990-01-15",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "headline",
+                                    "value": "Senior Software Engineer",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "about",
+                                    "value": "Experienced software engineer with 5+ years in backend development",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "linkedin",
+                                    "value": "https://linkedin.com/in/johndoe",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "github",
+                                    "value": "https://github.com/johndoe",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "profile_picture",
+                                    "type": "file",
+                                    "src": [],
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "resume",
+                                    "type": "file",
+                                    "src": [],
+                                    "disabled": true
+                                }
+                            ]
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/auth/update_profile/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "auth",
+                                "update_profile",
+                                ""
+                            ]
+                        },
+                        "description": "Partially update candidate profile"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Update Profile (Employer) - PATCH",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [],
+                        "body": {
+                            "mode": "formdata",
+                            "formdata": [
+                                {
+                                    "key": "company_name",
+                                    "value": "Tech Corp Inc.",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "company_size",
+                                    "value": "51-200",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "industry",
+                                    "value": "Technology",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "description",
+                                    "value": "Leading technology company specializing in cloud solutions",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "website_url",
+                                    "value": "https://techcorp.com",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "city",
+                                    "value": "San Francisco",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "state",
+                                    "value": "California",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "country",
+                                    "value": "USA",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "phone",
+                                    "value": "+1234567890",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "logo",
+                                    "type": "file",
+                                    "src": [],
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "cover_image",
+                                    "type": "file",
+                                    "src": [],
+                                    "disabled": true
+                                }
+                            ]
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/auth/update_profile/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "auth",
+                                "update_profile",
+                                ""
+                            ]
+                        },
+                        "description": "Partially update employer profile"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Get User Applications",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/auth/applications/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "auth",
+                                "applications",
+                                ""
+                            ]
+                        },
+                        "description": "Get all applications for current user (candidate's or employer's)"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Get User Notifications",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/auth/notifications/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "auth",
+                                "notifications",
+                                ""
+                            ]
+                        },
+                        "description": "Get all notifications for current user"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Get User Reviews",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/auth/reviews/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "auth",
+                                "reviews",
+                                ""
+                            ]
+                        },
+                        "description": "Get all reviews for current user"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Get Saved Jobs",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/auth/saved_jobs/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "auth",
+                                "saved_jobs",
+                                ""
+                            ]
+                        },
+                        "description": "Get all jobs saved by current user"
+                    },
+                    "response": []
+                }
+            ],
+            "description": "Authentication and user profile management endpoints"
+        },
+        {
+            "name": "Jobs",
+            "item": [
+                {
+                    "name": "List All Active Jobs",
+                    "request": {
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/jobs/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "jobs",
+                                ""
+                            ]
+                        },
+                        "description": "Get list of all active job postings (public access)"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Get Job Details",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "if (pm.response.code === 200) {",
+                                    "    var jsonData = pm.response.json();",
+                                    "    pm.collectionVariables.set(\"job_id\", jsonData.id);",
+                                    "}"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/jobs/{{job_id}}/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "jobs",
+                                "{{job_id}}",
+                                ""
+                            ]
+                        },
+                        "description": "Get detailed information about a specific job (public access)"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Create Job Posting",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "if (pm.response.code === 201) {",
+                                    "    var jsonData = pm.response.json();",
+                                    "    pm.collectionVariables.set(\"job_id\", jsonData.id);",
+                                    "}"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"title\": \"Senior Backend Developer\",\n  \"description\": \"We are looking for an experienced backend developer to join our growing team. You will be responsible for designing, developing, and maintaining scalable backend services that power our platform. This is a remote position with opportunities for growth.\",\n  \"responsibilities\": [\n    \"Design and develop scalable backend services using Python and Django\",\n    \"Collaborate with frontend team to integrate RESTful APIs\",\n    \"Write clean, maintainable, and well-documented code\",\n    \"Conduct code reviews and mentor junior developers\",\n    \"Participate in architectural decisions and technical planning\",\n    \"Optimize application performance and scalability\"\n  ],\n  \"requirements\": [\n    \"5+ years of professional Python/Django experience\",\n    \"Strong understanding of REST APIs and microservices architecture\",\n    \"Experience with PostgreSQL or similar relational databases\",\n    \"Proficiency in Git and version control workflows\",\n    \"Excellent problem-solving and debugging skills\",\n    \"Bachelor's degree in Computer Science or related field (or equivalent experience)\"\n  ],\n  \"nice_to_have\": [\n    \"Experience with Docker and Kubernetes\",\n    \"Frontend development skills (React, Vue.js)\",\n    \"AWS or other cloud platform experience\",\n    \"Open source contributions\",\n    \"Experience with Redis, Celery, or message queues\"\n  ],\n  \"benefits\": [\n    \"Competitive salary ranging from $100k to $150k\",\n    \"Comprehensive health, dental, and vision insurance\",\n    \"401k matching up to 6%\",\n    \"Fully remote work with flexible hours\",\n    \"Professional development budget of $5000/year\",\n    \"Latest equipment (MacBook Pro or equivalent)\",\n    \"25 days PTO plus holidays\",\n    \"Equity options\"\n  ],\n  \"employment_type\": \"FULL_TIME\",\n  \"job_type\": \"REMOTE\",\n  \"experience_level\": \"SENIOR\",\n  \"salary_min\": 100000.00,\n  \"salary_max\": 150000.00,\n  \"currency\": \"USD\",\n  \"is_salary_disclosed\": true,\n  \"location\": \"San Francisco, CA (Remote - US Only)\",\n  \"city\": \"San Francisco\",\n  \"state\": \"California\",\n  \"country\": \"USA\",\n  \"application_deadline\": \"2024-03-15\",\n  \"status\": \"DRAFT\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/jobs/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "jobs",
+                                ""
+                            ]
+                        },
+                        "description": "Create a new job posting (Employer only)"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Update Job (Full) - PUT",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"title\": \"Senior Backend Developer (Updated)\",\n  \"description\": \"Updated job description...\",\n  \"responsibilities\": [\n    \"Design and develop scalable backend services\",\n    \"Lead technical discussions\"\n  ],\n  \"requirements\": [\n    \"7+ years of Python/Django experience\",\n    \"Strong understanding of REST APIs\"\n  ],\n  \"nice_to_have\": [\n    \"Experience with Docker and Kubernetes\"\n  ],\n  \"benefits\": [\n    \"Competitive salary\",\n    \"Health insurance\"\n  ],\n  \"employment_type\": \"FULL_TIME\",\n  \"job_type\": \"HYBRID\",\n  \"experience_level\": \"SENIOR\",\n  \"salary_min\": 110000.00,\n  \"salary_max\": 160000.00,\n  \"currency\": \"USD\",\n  \"is_salary_disclosed\": true,\n  \"location\": \"San Francisco, CA\",\n  \"city\": \"San Francisco\",\n  \"state\": \"California\",\n  \"country\": \"USA\",\n  \"application_deadline\": \"2024-03-20\",\n  \"status\": \"ACTIVE\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/jobs/{{job_id}}/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "jobs",
+                                "{{job_id}}",
+                                ""
+                            ]
+                        },
+                        "description": "Full update of job posting (Employer only)"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Update Job (Partial) - PATCH",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"status\": \"ACTIVE\",\n  \"salary_max\": 165000.00,\n  \"application_deadline\": \"2024-03-25\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/jobs/{{job_id}}/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "jobs",
+                                "{{job_id}}",
+                                ""
+                            ]
+                        },
+                        "description": "Partial update of job posting (Employer only)"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Delete Job",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/jobs/{{job_id}}/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "jobs",
+                                "{{job_id}}",
+                                ""
+                            ]
+                        },
+                        "description": "Delete job posting (Employer only)"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Apply for Job",
+                    "request": {
+                        "method": "POST",
+                        "header": [],
+                        "body": {
+                            "mode": "formdata",
+                            "formdata": [
+                                {
+                                    "key": "cover_letter",
+                                    "value": "I am very interested in this position because of my extensive experience in backend development. I have been working with Python and Django for over 5 years and have led multiple projects from conception to deployment. I am particularly excited about this opportunity because...",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "expected_salary",
+                                    "value": "120000.00",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "available_from",
+                                    "value": "2024-03-01",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "resume",
+                                    "type": "file",
+                                    "src": [],
+                                    "disabled": true,
+                                    "description": "Optional if resume already uploaded to profile"
+                                }
+                            ]
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/jobs/{{job_id}}/apply/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "jobs",
+                                "{{job_id}}",
+                                "apply",
+                                ""
+                            ]
+                        },
+                        "description": "Submit job application (Candidate only)"
+                    },
+                    "response": []
+                }
+            ],
+            "description": "Job posting management and application endpoints"
+        }
+    ],
+    "event": [
+        {
+            "listen": "prerequest",
+            "script": {
+                "type": "text/javascript",
+                "exec": [
+                    ""
+                ]
+            }
+        },
+        {
+            "listen": "test",
+            "script": {
+                "type": "text/javascript",
+                "exec": [
+                    ""
+                ]
+            }
+        }
+    ]
+}

@@ -1,6 +1,10 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
-from .models import User, CandidateProfile, Application, JobPosting, EmployerProfile, SavedJob, CandidateSkill, Education, Certification, Notification
+from .models import (
+    User, CandidateProfile, Application, JobPosting, 
+    EmployerProfile, SavedJob, CandidateSkill, Education, 
+    Certification, Notification, Address
+)
 from .forms import UserChangeForm, UserCreationForm
 
 # Register your models here.
@@ -36,4 +40,5 @@ admin.site.register(CandidateSkill)
 admin.site.register(Education)
 admin.site.register(Certification)
 admin.site.register(Notification)
+admin.site.register(Address)
 
