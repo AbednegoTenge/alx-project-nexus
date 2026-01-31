@@ -29,6 +29,7 @@ SECRET_KEY = os.getenv('SECRET_KEY')
 DEBUG = os.getenv('DEBUG', 'False')
 
 ALLOWED_HOSTS = [
+    'https://alx-project-nexus-qhqk.onrender.com'
     'localhost',
     'triste-revealable-sandra.ngrok-free.dev',
     '[IP_ADDRESS]',

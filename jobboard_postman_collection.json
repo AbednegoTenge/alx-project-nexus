@@ -1,8 +1,8 @@
 {
     "info": {
-        "_postman_id": "job-portal-api-collection",
-        "name": "Job Portal API",
-        "description": "Complete API collection for Job Portal application with authentication, job management, and application features",
+        "_postman_id": "job-portal-complete-api",
+        "name": "Job Portal API - Complete Collection",
+        "description": "Comprehensive API collection covering ALL models and endpoints including Education, Skills, Certifications, Categories, Saved Jobs, Job Alerts, Reviews, Notifications, and Address management",
         "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
     },
     "auth": {
@@ -24,7 +24,8 @@
         {
             "key": "access_token",
             "value": "",
-            "type": "string"
+            "type": "string",
+            "description": "Current active access token (switches between candidate/employer)"
         },
         {
             "key": "refresh_token",
@@ -34,15 +35,67 @@
         {
             "key": "candidate_token",
             "value": "",
-            "type": "string"
+            "type": "string",
+            "description": "Candidate user access token"
         },
         {
             "key": "employer_token",
             "value": "",
-            "type": "string"
+            "type": "string",
+            "description": "Employer user access token"
         },
         {
             "key": "job_id",
+            "value": "1",
+            "type": "string"
+        },
+        {
+            "key": "application_id",
+            "value": "1",
+            "type": "string"
+        },
+        {
+            "key": "education_id",
+            "value": "1",
+            "type": "string"
+        },
+        {
+            "key": "certification_id",
+            "value": "1",
+            "type": "string"
+        },
+        {
+            "key": "skill_id",
+            "value": "1",
+            "type": "string"
+        },
+        {
+            "key": "category_id",
+            "value": "1",
+            "type": "string"
+        },
+        {
+            "key": "company_id",
+            "value": "1",
+            "type": "string"
+        },
+        {
+            "key": "review_id",
+            "value": "1",
+            "type": "string"
+        },
+        {
+            "key": "notification_id",
+            "value": "1",
+            "type": "string"
+        },
+        {
+            "key": "saved_job_id",
+            "value": "1",
+            "type": "string"
+        },
+        {
+            "key": "alert_id",
             "value": "1",
             "type": "string"
         }
@@ -52,21 +105,7 @@
             "name": "Authentication",
             "item": [
                 {
-                    "name": "Register User (Candidate)",
-                    "event": [
-                        {
-                            "listen": "test",
-                            "script": {
-                                "exec": [
-                                    "if (pm.response.code === 201) {",
-                                    "    var jsonData = pm.response.json();",
-                                    "    pm.environment.set(\"user_id\", jsonData.user.id);",
-                                    "}"
-                                ],
-                                "type": "text/javascript"
-                            }
-                        }
-                    ],
+                    "name": "Register Candidate",
                     "request": {
                         "auth": {
                             "type": "noauth"
@@ -92,27 +131,11 @@
                                 "register",
                                 ""
                             ]
-                        },
-                        "description": "Register a new candidate user"
-                    },
-                    "response": []
+                        }
+                    }
                 },
                 {
-                    "name": "Register User (Employer)",
-                    "event": [
-                        {
-                            "listen": "test",
-                            "script": {
-                                "exec": [
-                                    "if (pm.response.code === 201) {",
-                                    "    var jsonData = pm.response.json();",
-                                    "    pm.environment.set(\"employer_id\", jsonData.user.id);",
-                                    "}"
-                                ],
-                                "type": "text/javascript"
-                            }
-                        }
-                    ],
+                    "name": "Register Employer",
                     "request": {
                         "auth": {
                             "type": "noauth"
@@ -138,10 +161,8 @@
                                 "register",
                                 ""
                             ]
-                        },
-                        "description": "Register a new employer user"
-                    },
-                    "response": []
+                        }
+                    }
                 },
                 {
                     "name": "Login - Candidate",
@@ -155,11 +176,9 @@
                                     "    pm.collectionVariables.set('access_token', jsonData.access);",
                                     "    pm.collectionVariables.set('refresh_token', jsonData.refresh);",
                                     "    pm.collectionVariables.set('candidate_token', jsonData.access);",
-                                    "    pm.environment.set('access_token', jsonData.access);",
-                                    "    pm.environment.set('refresh_token', jsonData.refresh);",
+                                    "    console.log('Candidate logged in successfully');",
                                     "}"
-                                ],
-                                "type": "text/javascript"
+                                ]
                             }
                         }
                     ],
@@ -189,9 +208,8 @@
                                 ""
                             ]
                         },
-                        "description": "Authenticate candidate user and receive JWT tokens"
-                    },
-                    "response": []
+                        "description": "Login as a candidate user. This will save the token for candidate-specific operations."
+                    }
                 },
                 {
                     "name": "Login - Employer",
@@ -205,11 +223,9 @@
                                     "    pm.collectionVariables.set('access_token', jsonData.access);",
                                     "    pm.collectionVariables.set('refresh_token', jsonData.refresh);",
                                     "    pm.collectionVariables.set('employer_token', jsonData.access);",
-                                    "    pm.environment.set('access_token', jsonData.access);",
-                                    "    pm.environment.set('refresh_token', jsonData.refresh);",
+                                    "    console.log('Employer logged in successfully');",
                                     "}"
-                                ],
-                                "type": "text/javascript"
+                                ]
                             }
                         }
                     ],
@@ -239,27 +255,11 @@
                                 ""
                             ]
                         },
-                        "description": "Authenticate employer user and receive JWT tokens"
-                    },
-                    "response": []
+                        "description": "Login as an employer user. This will save the token for employer-specific operations."
+                    }
                 },
                 {
                     "name": "Refresh Token",
-                    "event": [
-                        {
-                            "listen": "test",
-                            "script": {
-                                "exec": [
-                                    "if (pm.response.code === 200) {",
-                                    "    var jsonData = pm.response.json();",
-                                    "    pm.collectionVariables.set(\"access_token\", jsonData.access);",
-                                    "    pm.environment.set(\"access_token\", jsonData.access);",
-                                    "}"
-                                ],
-                                "type": "text/javascript"
-                            }
-                        }
-                    ],
                     "request": {
                         "auth": {
                             "type": "noauth"
@@ -285,16 +285,13 @@
                                 "refresh",
                                 ""
                             ]
-                        },
-                        "description": "Get new access token using refresh token"
-                    },
-                    "response": []
+                        }
+                    }
                 },
                 {
                     "name": "Get Current User - Candidate",
                     "request": {
                         "method": "GET",
-                        "header": [],
                         "url": {
                             "raw": "{{base_url}}/auth/me/",
                             "host": [
@@ -306,15 +303,13 @@
                                 ""
                             ]
                         },
-                        "description": "Get current authenticated candidate user information"
-                    },
-                    "response": []
+                        "description": "Get current user info when logged in as candidate. Make sure to run 'Login - Candidate' first."
+                    }
                 },
                 {
                     "name": "Get Current User - Employer",
                     "request": {
                         "method": "GET",
-                        "header": [],
                         "url": {
                             "raw": "{{base_url}}/auth/me/",
                             "host": [
@@ -326,15 +321,13 @@
                                 ""
                             ]
                         },
-                        "description": "Get current authenticated employer user information"
-                    },
-                    "response": []
+                        "description": "Get current user info when logged in as employer. Make sure to run 'Login - Employer' first."
+                    }
                 },
                 {
                     "name": "Get User Profile",
                     "request": {
                         "method": "GET",
-                        "header": [],
                         "url": {
                             "raw": "{{base_url}}/auth/profile/",
                             "host": [
@@ -345,16 +338,13 @@
                                 "profile",
                                 ""
                             ]
-                        },
-                        "description": "Get detailed profile of current user (Candidate or Employer)"
-                    },
-                    "response": []
+                        }
+                    }
                 },
                 {
-                    "name": "Update Profile (Candidate) - PATCH",
+                    "name": "Update Candidate Profile",
                     "request": {
                         "method": "PATCH",
-                        "header": [],
                         "body": {
                             "mode": "formdata",
                             "formdata": [
@@ -380,7 +370,7 @@
                                 },
                                 {
                                     "key": "about",
-                                    "value": "Experienced software engineer with 5+ years in backend development",
+                                    "value": "Experienced software engineer with 5+ years",
                                     "type": "text"
                                 },
                                 {
@@ -396,13 +386,11 @@
                                 {
                                     "key": "profile_picture",
                                     "type": "file",
-                                    "src": [],
                                     "disabled": true
                                 },
                                 {
                                     "key": "resume",
                                     "type": "file",
-                                    "src": [],
                                     "disabled": true
                                 }
                             ]
@@ -417,98 +405,13 @@
                                 "update_profile",
                                 ""
                             ]
-                        },
-                        "description": "Partially update candidate profile"
-                    },
-                    "response": []
-                },
-                {
-                    "name": "Update Profile (Employer) - PATCH",
-                    "request": {
-                        "method": "PATCH",
-                        "header": [],
-                        "body": {
-                            "mode": "formdata",
-                            "formdata": [
-                                {
-                                    "key": "company_name",
-                                    "value": "Tech Corp Inc.",
-                                    "type": "text"
-                                },
-                                {
-                                    "key": "company_size",
-                                    "value": "51-200",
-                                    "type": "text"
-                                },
-                                {
-                                    "key": "industry",
-                                    "value": "Technology",
-                                    "type": "text"
-                                },
-                                {
-                                    "key": "description",
-                                    "value": "Leading technology company specializing in cloud solutions",
-                                    "type": "text"
-                                },
-                                {
-                                    "key": "website_url",
-                                    "value": "https://techcorp.com",
-                                    "type": "text"
-                                },
-                                {
-                                    "key": "city",
-                                    "value": "San Francisco",
-                                    "type": "text"
-                                },
-                                {
-                                    "key": "state",
-                                    "value": "California",
-                                    "type": "text"
-                                },
-                                {
-                                    "key": "country",
-                                    "value": "USA",
-                                    "type": "text"
-                                },
-                                {
-                                    "key": "phone",
-                                    "value": "+1234567890",
-                                    "type": "text"
-                                },
-                                {
-                                    "key": "logo",
-                                    "type": "file",
-                                    "src": [],
-                                    "disabled": true
-                                },
-                                {
-                                    "key": "cover_image",
-                                    "type": "file",
-                                    "src": [],
-                                    "disabled": true
-                                }
-                            ]
-                        },
-                        "url": {
-                            "raw": "{{base_url}}/auth/update_profile/",
-                            "host": [
-                                "{{base_url}}"
-                            ],
-                            "path": [
-                                "auth",
-                                "update_profile",
-                                ""
-                            ]
-                        },
-                        "description": "Partially update employer profile"
-                    },
-                    "response": []
+                        }
+                    }
                 },
                 {
                     "name": "Get User Applications",
                     "request": {
                         "method": "GET",
-                        "header": [],
                         "url": {
                             "raw": "{{base_url}}/auth/applications/",
                             "host": [
@@ -519,16 +422,13 @@
                                 "applications",
                                 ""
                             ]
-                        },
-                        "description": "Get all applications for current user (candidate's or employer's)"
-                    },
-                    "response": []
+                        }
+                    }
                 },
                 {
                     "name": "Get User Notifications",
                     "request": {
                         "method": "GET",
-                        "header": [],
                         "url": {
                             "raw": "{{base_url}}/auth/notifications/",
                             "host": [
@@ -539,16 +439,13 @@
                                 "notifications",
                                 ""
                             ]
-                        },
-                        "description": "Get all notifications for current user"
-                    },
-                    "response": []
+                        }
+                    }
                 },
                 {
                     "name": "Get User Reviews",
                     "request": {
                         "method": "GET",
-                        "header": [],
                         "url": {
                             "raw": "{{base_url}}/auth/reviews/",
                             "host": [
@@ -559,16 +456,13 @@
                                 "reviews",
                                 ""
                             ]
-                        },
-                        "description": "Get all reviews for current user"
-                    },
-                    "response": []
+                        }
+                    }
                 },
                 {
                     "name": "Get Saved Jobs",
                     "request": {
                         "method": "GET",
-                        "header": [],
                         "url": {
                             "raw": "{{base_url}}/auth/saved_jobs/",
                             "host": [
@@ -579,92 +473,33 @@
                                 "saved_jobs",
                                 ""
                             ]
-                        },
-                        "description": "Get all jobs saved by current user"
-                    },
-                    "response": []
+                        }
+                    }
                 }
-            ],
-            "description": "Authentication and user profile management endpoints"
+            ]
         },
         {
-            "name": "Jobs",
+            "name": "Education Management",
             "item": [
                 {
-                    "name": "List All Active Jobs",
+                    "name": "List Education",
                     "request": {
-                        "auth": {
-                            "type": "noauth"
-                        },
                         "method": "GET",
-                        "header": [],
                         "url": {
-                            "raw": "{{base_url}}/jobs/",
+                            "raw": "{{base_url}}/profile/education/",
                             "host": [
                                 "{{base_url}}"
                             ],
                             "path": [
-                                "jobs",
+                                "profile",
+                                "education",
                                 ""
                             ]
-                        },
-                        "description": "Get list of all active job postings (public access)"
-                    },
-                    "response": []
+                        }
+                    }
                 },
                 {
-                    "name": "Get Job Details",
-                    "event": [
-                        {
-                            "listen": "test",
-                            "script": {
-                                "exec": [
-                                    "if (pm.response.code === 200) {",
-                                    "    var jsonData = pm.response.json();",
-                                    "    pm.collectionVariables.set(\"job_id\", jsonData.id);",
-                                    "}"
-                                ],
-                                "type": "text/javascript"
-                            }
-                        }
-                    ],
-                    "request": {
-                        "auth": {
-                            "type": "noauth"
-                        },
-                        "method": "GET",
-                        "header": [],
-                        "url": {
-                            "raw": "{{base_url}}/jobs/{{job_id}}/",
-                            "host": [
-                                "{{base_url}}"
-                            ],
-                            "path": [
-                                "jobs",
-                                "{{job_id}}",
-                                ""
-                            ]
-                        },
-                        "description": "Get detailed information about a specific job (public access)"
-                    },
-                    "response": []
-                },
-                {
-                    "name": "Create Job Posting",
-                    "event": [
-                        {
-                            "listen": "test",
-                            "script": {
-                                "exec": [
-                                    "if (pm.response.code === 201) {",
-                                    "    var jsonData = pm.response.json();",
-                                    "    pm.collectionVariables.set(\"job_id\", jsonData.id);",
-                                    "}"
-                                ],
-                                "type": "text/javascript"
-                            }
-                        }
-                    ],
+                    "name": "Create Education",
                     "request": {
                         "method": "POST",
                         "header": [
@@ -675,53 +510,23 @@
                         ],
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n  \"title\": \"Senior Backend Developer\",\n  \"description\": \"We are looking for an experienced backend developer to join our growing team. You will be responsible for designing, developing, and maintaining scalable backend services that power our platform. This is a remote position with opportunities for growth.\",\n  \"responsibilities\": [\n    \"Design and develop scalable backend services using Python and Django\",\n    \"Collaborate with frontend team to integrate RESTful APIs\",\n    \"Write clean, maintainable, and well-documented code\",\n    \"Conduct code reviews and mentor junior developers\",\n    \"Participate in architectural decisions and technical planning\",\n    \"Optimize application performance and scalability\"\n  ],\n  \"requirements\": [\n    \"5+ years of professional Python/Django experience\",\n    \"Strong understanding of REST APIs and microservices architecture\",\n    \"Experience with PostgreSQL or similar relational databases\",\n    \"Proficiency in Git and version control workflows\",\n    \"Excellent problem-solving and debugging skills\",\n    \"Bachelor's degree in Computer Science or related field (or equivalent experience)\"\n  ],\n  \"nice_to_have\": [\n    \"Experience with Docker and Kubernetes\",\n    \"Frontend development skills (React, Vue.js)\",\n    \"AWS or other cloud platform experience\",\n    \"Open source contributions\",\n    \"Experience with Redis, Celery, or message queues\"\n  ],\n  \"benefits\": [\n    \"Competitive salary ranging from $100k to $150k\",\n    \"Comprehensive health, dental, and vision insurance\",\n    \"401k matching up to 6%\",\n    \"Fully remote work with flexible hours\",\n    \"Professional development budget of $5000/year\",\n    \"Latest equipment (MacBook Pro or equivalent)\",\n    \"25 days PTO plus holidays\",\n    \"Equity options\"\n  ],\n  \"employment_type\": \"FULL_TIME\",\n  \"job_type\": \"REMOTE\",\n  \"experience_level\": \"SENIOR\",\n  \"salary_min\": 100000.00,\n  \"salary_max\": 150000.00,\n  \"currency\": \"USD\",\n  \"is_salary_disclosed\": true,\n  \"location\": \"San Francisco, CA (Remote - US Only)\",\n  \"city\": \"San Francisco\",\n  \"state\": \"California\",\n  \"country\": \"USA\",\n  \"application_deadline\": \"2024-03-15\",\n  \"status\": \"DRAFT\"\n}"
+                            "raw": "{\n  \"level\": \"BACHELOR\",\n  \"field_of_study\": \"Computer Science\",\n  \"institution\": \"MIT\",\n  \"start_date\": \"2010-09-01\",\n  \"end_date\": \"2014-06-01\",\n  \"description\": \"Bachelor's degree with focus on algorithms and data structures\"\n}"
                         },
                         "url": {
-                            "raw": "{{base_url}}/jobs/",
+                            "raw": "{{base_url}}/profile/education/",
                             "host": [
                                 "{{base_url}}"
                             ],
                             "path": [
-                                "jobs",
+                                "profile",
+                                "education",
                                 ""
                             ]
-                        },
-                        "description": "Create a new job posting (Employer only)"
-                    },
-                    "response": []
+                        }
+                    }
                 },
                 {
-                    "name": "Update Job (Full) - PUT",
-                    "request": {
-                        "method": "PUT",
-                        "header": [
-                            {
-                                "key": "Content-Type",
-                                "value": "application/json"
-                            }
-                        ],
-                        "body": {
-                            "mode": "raw",
-                            "raw": "{\n  \"title\": \"Senior Backend Developer (Updated)\",\n  \"description\": \"Updated job description...\",\n  \"responsibilities\": [\n    \"Design and develop scalable backend services\",\n    \"Lead technical discussions\"\n  ],\n  \"requirements\": [\n    \"7+ years of Python/Django experience\",\n    \"Strong understanding of REST APIs\"\n  ],\n  \"nice_to_have\": [\n    \"Experience with Docker and Kubernetes\"\n  ],\n  \"benefits\": [\n    \"Competitive salary\",\n    \"Health insurance\"\n  ],\n  \"employment_type\": \"FULL_TIME\",\n  \"job_type\": \"HYBRID\",\n  \"experience_level\": \"SENIOR\",\n  \"salary_min\": 110000.00,\n  \"salary_max\": 160000.00,\n  \"currency\": \"USD\",\n  \"is_salary_disclosed\": true,\n  \"location\": \"San Francisco, CA\",\n  \"city\": \"San Francisco\",\n  \"state\": \"California\",\n  \"country\": \"USA\",\n  \"application_deadline\": \"2024-03-20\",\n  \"status\": \"ACTIVE\"\n}"
-                        },
-                        "url": {
-                            "raw": "{{base_url}}/jobs/{{job_id}}/",
-                            "host": [
-                                "{{base_url}}"
-                            ],
-                            "path": [
-                                "jobs",
-                                "{{job_id}}",
-                                ""
-                            ]
-                        },
-                        "description": "Full update of job posting (Employer only)"
-                    },
-                    "response": []
-                },
-                {
-                    "name": "Update Job (Partial) - PATCH",
+                    "name": "Update Education",
                     "request": {
                         "method": "PATCH",
                         "header": [
@@ -732,7 +537,446 @@
                         ],
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n  \"status\": \"ACTIVE\",\n  \"salary_max\": 165000.00,\n  \"application_deadline\": \"2024-03-25\"\n}"
+                            "raw": "{\n  \"description\": \"Updated description of my degree\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/profile/education/{{education_id}}/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "profile",
+                                "education",
+                                "{{education_id}}",
+                                ""
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Delete Education",
+                    "request": {
+                        "method": "DELETE",
+                        "url": {
+                            "raw": "{{base_url}}/profile/education/{{education_id}}/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "profile",
+                                "education",
+                                "{{education_id}}",
+                                ""
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Certifications Management",
+            "item": [
+                {
+                    "name": "List Certifications",
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{base_url}}/profile/certifications/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "profile",
+                                "certifications",
+                                ""
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Create Certification",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"name\": \"AWS Solutions Architect\",\n  \"issuing_organization\": \"Amazon Web Services\",\n  \"issue_date\": \"2020-05-01\",\n  \"expiry_date\": \"2023-05-01\",\n  \"credential_url\": \"https://aws.amazon.com/verify/12345\",\n  \"credential_id\": \"AWS-123456\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/profile/certifications/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "profile",
+                                "certifications",
+                                ""
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Update Certification",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"expiry_date\": \"2024-05-01\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/profile/certifications/{{certification_id}}/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "profile",
+                                "certifications",
+                                "{{certification_id}}",
+                                ""
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Delete Certification",
+                    "request": {
+                        "method": "DELETE",
+                        "url": {
+                            "raw": "{{base_url}}/profile/certifications/{{certification_id}}/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "profile",
+                                "certifications",
+                                "{{certification_id}}",
+                                ""
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Skills Management",
+            "item": [
+                {
+                    "name": "List All Skills",
+                    "request": {
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{base_url}}/skills/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "skills",
+                                ""
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Create Skill (Admin)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"name\": \"Python\",\n  \"category\": \"Programming Language\",\n  \"description\": \"High-level programming language\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/skills/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "skills",
+                                ""
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "List My Skills",
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{base_url}}/profile/skills/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "profile",
+                                "skills",
+                                ""
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Add Skill to Profile",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"skill_id\": 1\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/profile/skills/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "profile",
+                                "skills",
+                                ""
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Remove Skill from Profile",
+                    "request": {
+                        "method": "DELETE",
+                        "url": {
+                            "raw": "{{base_url}}/profile/skills/{{skill_id}}/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "profile",
+                                "skills",
+                                "{{skill_id}}",
+                                ""
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Categories Management",
+            "item": [
+                {
+                    "name": "List Categories",
+                    "request": {
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{base_url}}/categories/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "categories",
+                                ""
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Create Category (Admin)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"name\": \"Software Development\",\n  \"description\": \"Jobs related to software development\",\n  \"parent\": null,\n  \"icon\": \"💻\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/categories/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "categories",
+                                ""
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Update Category (Admin)",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"description\": \"Updated description\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/categories/{{category_id}}/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "categories",
+                                "{{category_id}}",
+                                ""
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Delete Category (Admin)",
+                    "request": {
+                        "method": "DELETE",
+                        "url": {
+                            "raw": "{{base_url}}/categories/{{category_id}}/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "categories",
+                                "{{category_id}}",
+                                ""
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Jobs Management",
+            "item": [
+                {
+                    "name": "List All Active Jobs",
+                    "request": {
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{base_url}}/jobs/?employment_type=FULL_TIME&job_type=REMOTE",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "jobs",
+                                ""
+                            ],
+                            "query": [
+                                {
+                                    "key": "employment_type",
+                                    "value": "FULL_TIME",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "job_type",
+                                    "value": "REMOTE",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "experience_level",
+                                    "value": "SENIOR",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "city",
+                                    "value": "San Francisco",
+                                    "disabled": true
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Get Job Details",
+                    "request": {
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{base_url}}/jobs/{{job_id}}/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "jobs",
+                                "{{job_id}}",
+                                ""
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Create Job Posting",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"title\": \"Senior Backend Developer\",\n  \"description\": \"We are looking for an experienced backend developer...\",\n  \"responsibilities\": [\"Design scalable services\", \"Lead code reviews\"],\n  \"requirements\": [\"5+ years Python\", \"REST API expertise\"],\n  \"nice_to_have\": [\"Docker/K8s experience\"],\n  \"benefits\": [\"Health insurance\", \"Remote work\"],\n  \"employment_type\": \"FULL_TIME\",\n  \"job_type\": \"REMOTE\",\n  \"experience_level\": \"SENIOR\",\n  \"salary_min\": 100000.00,\n  \"salary_max\": 150000.00,\n  \"currency\": \"USD\",\n  \"is_salary_disclosed\": true,\n  \"location\": \"San Francisco, CA\",\n  \"city\": \"San Francisco\",\n  \"state\": \"California\",\n  \"country\": \"USA\",\n  \"application_deadline\": \"2024-03-15\",\n  \"status\": \"DRAFT\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/jobs/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "jobs",
+                                ""
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Update Job (Partial)",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"status\": \"ACTIVE\",\n  \"salary_max\": 165000.00\n}"
                         },
                         "url": {
                             "raw": "{{base_url}}/jobs/{{job_id}}/",
@@ -744,16 +988,13 @@
                                 "{{job_id}}",
                                 ""
                             ]
-                        },
-                        "description": "Partial update of job posting (Employer only)"
-                    },
-                    "response": []
+                        }
+                    }
                 },
                 {
                     "name": "Delete Job",
                     "request": {
                         "method": "DELETE",
-                        "header": [],
                         "url": {
                             "raw": "{{base_url}}/jobs/{{job_id}}/",
                             "host": [
@@ -764,22 +1005,19 @@
                                 "{{job_id}}",
                                 ""
                             ]
-                        },
-                        "description": "Delete job posting (Employer only)"
-                    },
-                    "response": []
+                        }
+                    }
                 },
                 {
                     "name": "Apply for Job",
                     "request": {
                         "method": "POST",
-                        "header": [],
                         "body": {
                             "mode": "formdata",
                             "formdata": [
                                 {
                                     "key": "cover_letter",
-                                    "value": "I am very interested in this position because of my extensive experience in backend development. I have been working with Python and Django for over 5 years and have led multiple projects from conception to deployment. I am particularly excited about this opportunity because...",
+                                    "value": "I am very interested in this position...",
                                     "type": "text"
                                 },
                                 {
@@ -795,9 +1033,7 @@
                                 {
                                     "key": "resume",
                                     "type": "file",
-                                    "src": [],
-                                    "disabled": true,
-                                    "description": "Optional if resume already uploaded to profile"
+                                    "disabled": true
                                 }
                             ]
                         },
@@ -812,33 +1048,505 @@
                                 "apply",
                                 ""
                             ]
+                        }
+                    }
+                },
+                {
+                    "name": "Add Skills to Job",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"skill_id\": 1,\n  \"is_required\": true,\n  \"minimum_years\": 5\n}"
                         },
-                        "description": "Submit job application (Candidate only)"
-                    },
-                    "response": []
+                        "url": {
+                            "raw": "{{base_url}}/jobs/{{job_id}}/skills/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "jobs",
+                                "{{job_id}}",
+                                "skills",
+                                ""
+                            ]
+                        }
+                    }
                 }
-            ],
-            "description": "Job posting management and application endpoints"
-        }
-    ],
-    "event": [
-        {
-            "listen": "prerequest",
-            "script": {
-                "type": "text/javascript",
-                "exec": [
-                    ""
-                ]
-            }
+            ]
         },
         {
-            "listen": "test",
-            "script": {
-                "type": "text/javascript",
-                "exec": [
-                    ""
-                ]
-            }
+            "name": "Applications Management",
+            "item": [
+                {
+                    "name": "Get Application Details",
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{base_url}}/applications/{{application_id}}/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "applications",
+                                "{{application_id}}",
+                                ""
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Update Application Status (Employer)",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"status\": \"REVIEWED\",\n  \"notes\": \"Good candidate, schedule interview\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/applications/{{application_id}}/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "applications",
+                                "{{application_id}}",
+                                ""
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Withdraw Application",
+                    "request": {
+                        "method": "POST",
+                        "url": {
+                            "raw": "{{base_url}}/applications/{{application_id}}/withdraw/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "applications",
+                                "{{application_id}}",
+                                "withdraw",
+                                ""
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Get Application History",
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{base_url}}/applications/{{application_id}}/history/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "applications",
+                                "{{application_id}}",
+                                "history",
+                                ""
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Saved Jobs & Alerts",
+            "item": [
+                {
+                    "name": "Save Job",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"job_id\": 5,\n  \"notes\": \"Interesting position, matches my skills\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/saved-jobs/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "saved-jobs",
+                                ""
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Update Saved Job Notes",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"notes\": \"Updated notes\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/saved-jobs/{{saved_job_id}}/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "saved-jobs",
+                                "{{saved_job_id}}",
+                                ""
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Remove Saved Job",
+                    "request": {
+                        "method": "DELETE",
+                        "url": {
+                            "raw": "{{base_url}}/saved-jobs/{{saved_job_id}}/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "saved-jobs",
+                                "{{saved_job_id}}",
+                                ""
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "List Job Alerts",
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{base_url}}/job-alerts/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "job-alerts",
+                                ""
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Create Job Alert",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"alert_name\": \"Senior Backend Jobs\",\n  \"keywords\": \"python, django, backend\",\n  \"location\": \"San Francisco\",\n  \"job_type\": \"REMOTE\",\n  \"experience_level\": \"SENIOR\",\n  \"salary_min\": 100000.00,\n  \"is_remote\": true,\n  \"frequency\": \"DAILY\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/job-alerts/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "job-alerts",
+                                ""
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Update Job Alert",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"frequency\": \"WEEKLY\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/job-alerts/{{alert_id}}/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "job-alerts",
+                                "{{alert_id}}",
+                                ""
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Delete Job Alert",
+                    "request": {
+                        "method": "DELETE",
+                        "url": {
+                            "raw": "{{base_url}}/job-alerts/{{alert_id}}/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "job-alerts",
+                                "{{alert_id}}",
+                                ""
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Company Reviews",
+            "item": [
+                {
+                    "name": "List Company Reviews",
+                    "request": {
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{base_url}}/companies/{{company_id}}/reviews/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "companies",
+                                "{{company_id}}",
+                                "reviews",
+                                ""
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Create Review",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"rating\": 5,\n  \"review_text\": \"Great company to work for! Excellent culture.\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/companies/{{company_id}}/reviews/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "companies",
+                                "{{company_id}}",
+                                "reviews",
+                                ""
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Update Review",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"rating\": 4,\n  \"review_text\": \"Updated review text\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/reviews/{{review_id}}/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "reviews",
+                                "{{review_id}}",
+                                ""
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Delete Review",
+                    "request": {
+                        "method": "DELETE",
+                        "url": {
+                            "raw": "{{base_url}}/reviews/{{review_id}}/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "reviews",
+                                "{{review_id}}",
+                                ""
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Notifications",
+            "item": [
+                {
+                    "name": "Mark Notification as Read",
+                    "request": {
+                        "method": "POST",
+                        "url": {
+                            "raw": "{{base_url}}/notifications/{{notification_id}}/mark-read/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "notifications",
+                                "{{notification_id}}",
+                                "mark-read",
+                                ""
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Mark All Notifications as Read",
+                    "request": {
+                        "method": "POST",
+                        "url": {
+                            "raw": "{{base_url}}/notifications/mark-all-read/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "notifications",
+                                "mark-all-read",
+                                ""
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Delete Notification",
+                    "request": {
+                        "method": "DELETE",
+                        "url": {
+                            "raw": "{{base_url}}/notifications/{{notification_id}}/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "notifications",
+                                "{{notification_id}}",
+                                ""
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Address Management",
+            "item": [
+                {
+                    "name": "Get Address",
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{base_url}}/profile/address/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "profile",
+                                "address",
+                                ""
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Create/Update Address",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"street\": \"123 Main Street, Apt 4B\",\n  \"city\": \"San Francisco\",\n  \"state\": \"California\",\n  \"country\": \"USA\",\n  \"postal_code\": \"94102\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/profile/address/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "profile",
+                                "address",
+                                ""
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Delete Address",
+                    "request": {
+                        "method": "DELETE",
+                        "url": {
+                            "raw": "{{base_url}}/profile/address/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "profile",
+                                "address",
+                                ""
+                            ]
+                        }
+                    }
+                }
+            ]
         }
     ]
 }
