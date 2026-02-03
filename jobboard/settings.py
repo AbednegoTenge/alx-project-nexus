@@ -120,7 +120,14 @@ SIMPLE_JWT = {
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
 DATABASES = {
-    'default': dj_database_url.parse(os.getenv('DB_URL'))
+    'default': {
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': os.getenv('DB_NAME'),
+        'USER': os.getenv('DB_USER'),
+        'PASSWORD': os.getenv('DB_PASSWORD'),
+        'HOST': os.getenv('DB_HOST'),
+        'PORT': os.getenv('DB_PORT'),
+    }
 }
 
 AUTH_USER_MODEL = 'core.User'
