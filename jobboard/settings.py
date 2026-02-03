@@ -91,7 +91,9 @@ REST_FRAMEWORK = {
 }
 
 # CORS Settings
-CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOWED_ORIGINS = [
+    "https://job-board-lake-beta.vercel.app"
+]
 
 # JWT Settings
 from datetime import timedelta
