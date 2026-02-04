@@ -504,8 +504,6 @@ class ApplicationStatusHistory(BaseModel):
         return f"{self.application} - {self.old_status} -> {self.new_status}"
 
 
-# ==================== USER ENGAGEMENT MODELS ====================
-
 class SavedJob(BaseModel):
     candidate = models.ForeignKey(
         CandidateProfile, 
@@ -552,6 +550,35 @@ class JobAlert(BaseModel):
 
     def __str__(self):
         return f"{self.candidate.user.get_full_name()} - {self.alert_name}"
+
+class JobNotification(BaseModel):
+    """Track which job postings have been sent to which candidates"""
+    candidate = models.ForeignKey(
+        CandidateProfile,
+        on_delete=models.CASCADE,
+        related_name='job_notifications'
+    )
+    job_posting = models.ForeignKey(
+        JobPosting,
+        on_delete=models.CASCADE,
+        related_name='notifications'
+    )
+    sent_at = models.DateTimeField(auto_now_add=True)
+    read_at = models.DateTimeField(null=True, blank=True)
+    
+    class Meta:
+        verbose_name = 'Job Notification'
+        verbose_name_plural = 'Job Notifications'
+        unique_together = ['candidate', 'job_posting']
+        ordering = ['-sent_at']
+        indexes = [
+            models.Index(fields=['candidate']),
+            models.Index(fields=['job_posting']),
+            models.Index(fields=['sent_at']),
+        ]
+    
+    def __str__(self):
+        return f"{self.candidate.user.get_full_name()} - {self.job_posting.title}"
 
 
 class CompanyReview(BaseModel):

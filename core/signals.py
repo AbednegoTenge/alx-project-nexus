@@ -1,6 +1,9 @@
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-from .models import CandidateProfile, EmployerProfile, Address, Notification, Application, JobPosting, JobAlert
+from .models import (
+    CandidateProfile, EmployerProfile, Address, 
+    Notification, Application, JobPosting, JobNotification
+)
 from django.contrib.auth import get_user_model
 from .utils import send_email
 import logging
@@ -39,14 +42,20 @@ def send_candidate_notification(sender, instance, created, **kwargs):
             content=f"You have successfully applied for the position of {instance.job.title} at {instance.job.employer.company_name}.",
         )
 
+
 @receiver(post_save, sender=JobPosting)
-def send_job_alerts(sender, instance, created, **kwargs):
+def send_automatic_job_notifications(sender, instance, created, **kwargs):
     """
-    Send job alerts to matching candidates when a new job is posted.
-    Matches candidates based on their skills.
+    Automatically send job notifications to matching candidates when a new job is posted.
+    Matches candidates based on their skills (skill-based matching).
     """
     if not created:
-        return  # Only send alerts for new job postings
+        return  # Only send notifications for new job postings
+    
+    # Only send notifications for active jobs
+    if instance.status != JobPosting.Status.ACTIVE:
+        logger.info(f"Job {instance.title} is not active, skipping automatic notifications")
+        return
     
     # Get all required skills for this job
     required_skill_ids = instance.job_skills.filter(
@@ -54,25 +63,27 @@ def send_job_alerts(sender, instance, created, **kwargs):
     ).values_list('skill_id', flat=True)
     
     if not required_skill_ids:
-        logger.info(f"No required skills for job {instance.title}, skipping alerts")
+        logger.info(f"No required skills for job {instance.title}, skipping skill-based matching")
         return
     
     # Find candidates who have at least one of the required skills
     matching_candidates = CandidateProfile.objects.filter(
-        candidate_skills__skill_id__in=required_skill_ids
+        candidate_skills__skill_id__in=required_skill_ids,
+        user__is_active=True  # Only send to active users
     ).distinct()
     
-    logger.info(f"Found {matching_candidates.count()} matching candidates for {instance.title}")
+    logger.info(f"Found {matching_candidates.count()} skill-matching candidates for {instance.title}")
     
     for candidate in matching_candidates:
-        # Create job alert record
-        job_alert, alert_created = JobAlert.objects.get_or_create(
+        # Create job notification record
+        notification, notification_created = JobNotification.objects.get_or_create(
             candidate=candidate,
-            job_posting=instance
+            job_posting=instance,
+            defaults={'source': 'SKILL_MATCH'}
         )
         
-        if not alert_created:
-            logger.info(f"Alert already exists for {candidate.user.email}")
+        if not notification_created:
+            logger.info(f"Notification already exists for {candidate.user.email}")
             continue
         
         # Get matching skills for personalization
@@ -150,3 +161,4 @@ def send_job_alerts(sender, instance, created, **kwargs):
             logger.info(f"Alert sent to {candidate.user.email} for job {instance.title}")
         else:
             logger.error(f"Failed to send alert to {candidate.user.email} for job {instance.title}")
+
