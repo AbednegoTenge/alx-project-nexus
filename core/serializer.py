@@ -132,6 +132,15 @@ class ApplyJobSerializer(serializers.ModelSerializer):
             candidate=candidate_profile,
             **validated_data
         )
+
+
+class SkillSerializer(serializers.ModelSerializer):
+    """Serializer for skill (read and update)"""
+    class Meta:
+        model = Skill
+        fields = ['id', 'name', 'category', 'description']
+
+
 class JobSkillSerializer(serializers.ModelSerializer):
     """Serializer for job skills"""
     skill = SkillSerializer(read_only=True)
@@ -366,13 +375,6 @@ class GetJobSerializer(serializers.ModelSerializer):
         elif obj.salary_max:
             return f"Up to {obj.currency} {obj.salary_max:,.0f}"
         return None
-
-
-class SkillSerializer(serializers.ModelSerializer):
-    """Serializer for skill (read and update)"""
-    class Meta:
-        model = Skill
-        fields = ['id', 'name', 'category', 'description']
 
 
 class CandidateSkillSerializer(serializers.ModelSerializer):
