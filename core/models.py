@@ -231,8 +231,6 @@ class Certification(BaseModel):
         return f"{self.name} - {self.issuing_organization}"
 
 
-# ==================== EMPLOYER MODELS ====================
-
 class EmployerProfile(BaseModel):
     class CompanySize(models.TextChoices):
         SMALL = '1-10', _('1-10 employees')
@@ -280,8 +278,6 @@ class EmployerProfile(BaseModel):
         return f"{self.user.get_full_name()} - {self.company_name}"
 
 
-# ==================== JOB MODELS ====================
-
 class Category(BaseModel):
     name = models.CharField(max_length=100, unique=True)
     slug = models.SlugField(max_length=100, unique=True, blank=True)
@@ -293,7 +289,6 @@ class Category(BaseModel):
         blank=True, 
         related_name='subcategories'
     )
-    icon = models.CharField(max_length=50, blank=True, help_text="Icon class or emoji")
 
     class Meta:
         verbose_name = 'Category'
@@ -412,8 +407,6 @@ class JobPosting(BaseModel):
             models.Index(fields=['city', 'country']),
         ]
 
-    def __str__(self):
-        return f"{self.title} at {self.employer.company_name}"
 
     def clean(self):
         if self.salary_min and self.salary_max:
