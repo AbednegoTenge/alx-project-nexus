@@ -14,7 +14,6 @@ from django.conf.global_settings import EMAIL_BACKEND
 from pathlib import Path
 import os
 from dotenv import load_dotenv
-import dj_database_url
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -91,10 +90,9 @@ REST_FRAMEWORK = {
 }
 
 # CORS Settings
-# CORS_ALLOWED_ORIGINS = [
-#     "https://job-board-lake-beta.vercel.app"
-# ]
-CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOWED_ORIGINS = [
+     "https://job-board-lake-beta.vercel.app"
+]
 
 # JWT Settings
 from datetime import timedelta
