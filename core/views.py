@@ -32,6 +32,10 @@ from django.core.cache import cache
 
 @cache_page(60 * 60)
 class AuthViewSet(GenericViewSet):
+    def get_permissions(self):
+        if self.action in ['login', 'register']:
+            return [AllowAny()]
+        return [IsAuthenticated()]
     
     def get_serializer_class(self):
         if self.action == 'login':
@@ -43,7 +47,7 @@ class AuthViewSet(GenericViewSet):
         return LoginSerializer # Default serializer
 
 
-    @action(detail=False, methods=['post'], permission_classes=[AllowAny])
+    @action(detail=False, methods=['post'])
     def login(self, request):
         serializer = self.get_serializer(data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
@@ -62,7 +66,7 @@ class AuthViewSet(GenericViewSet):
             'refresh': refresh_token,
         }, status=status.HTTP_200_OK)
 
-    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
+    @action(detail=False, methods=['get'])
     def me(self, request):
         user = request.user
         cache_key = f"user_login_data:{user.id}"
@@ -75,7 +79,7 @@ class AuthViewSet(GenericViewSet):
         }, status=status.HTTP_200_OK)
 
 
-    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
+    @action(detail=False, methods=['get'])
     def profile(self, request):
         """Get current user's profile"""
         user = request.user
@@ -128,7 +132,7 @@ class AuthViewSet(GenericViewSet):
                 
         
 
-    @action(detail=False, methods=['patch', 'put'], parser_classes=[MultiPartParser, FormParser], permission_classes=[IsAuthenticated])
+    @action(detail=False, methods=['patch', 'put'], parser_classes=[MultiPartParser, FormParser])
     def update_profile(self, request):
         """Update current user's profile"""
         user = request.user
@@ -546,7 +550,6 @@ class NotificationView(ModelViewSet):
         }, status=status.HTTP_200_OK)
 
 
-@cache_page(60 * 60)
 class ReviewView(ModelViewSet):
     queryset = CompanyReview.objects.all()
     serializer_class = ReviewSerializer
