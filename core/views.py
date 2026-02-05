@@ -30,7 +30,7 @@ from .utils import generate_resume_url
 from django.core.cache import cache
 
 
-
+@cache_page(60 * 60)
 class AuthViewSet(GenericViewSet):
     
     def get_serializer_class(self):
@@ -211,8 +211,7 @@ class AuthViewSet(GenericViewSet):
         serializer.is_valid(raise_exception=True)
         return Response(serializer.validated_data, status=status.HTTP_200_OK)
 
-
-
+@cache_page(60 * 60)
 class JobView(ModelViewSet):
     queryset = JobPosting.objects.all()
     serializer_class = JobPostingSerializer
@@ -331,7 +330,7 @@ class JobView(ModelViewSet):
         )
 
 
-
+@cache_page(60 * 60)
 class ApplicationView(ModelViewSet):
     queryset = Application.objects.all()
     serializer_class = ApplicationSerializer
