@@ -7,6 +7,7 @@ from .models import (
 from django.contrib.auth import get_user_model
 from .utils import send_email
 import logging
+from django.core.cache import cache
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +24,7 @@ def create_candidate_or_employer_profile(sender, instance, created, **kwargs):
 
 
 @receiver(post_save, sender=Application)
-def send_employer_notification(sender, instance, created, **kwargs):
+def send_employer_application_notification(sender, instance, created, **kwargs):
     if created:
         Notification.objects.create(
             user=instance.job.employer.user,
@@ -31,15 +32,34 @@ def send_employer_notification(sender, instance, created, **kwargs):
             notification_type=Notification.NotificationType.APPLICATION,
             content=f"{instance.candidate.user.get_full_name()} has applied for the position of {instance.job.title}.",
         )
+        cache.delete(f'user_notifications:{instance.job.id}')
 
 @receiver(post_save, sender=Application)
-def send_candidate_notification(sender, instance, created, **kwargs):
+def send_candidate_application_notification(sender, instance, created, **kwargs):
     if created:
         Notification.objects.create(
             user=instance.candidate.user,
             title=f"Application for {instance.job.title} has been submitted",
             notification_type=Notification.NotificationType.APPLICATION,
             content=f"You have successfully applied for the position of {instance.job.title} at {instance.job.employer.company_name}.",
+        )
+        cache.delete(f'user_notifications:{instance.candidate.user.id}')
+
+
+@receiver(post_save, sender=Application)
+def send_candidate_application_status_update_notification(sender, instance, created, **kwargs):
+    if created:
+        Notification.objects.create(
+            user=instance.candidate.user,
+            title=f"Application for {instance.job.title} has been updated",
+            notification_type=Notification.NotificationType.APPLICATION_STATUS,
+            content=f"Your application for the position of {instance.job.title} at {instance.job.employer.company_name} has been updated.",
+        )
+        cache.delete(f'user_notifications:{instance.candidate.user.id}')
+        send_email(
+            to=instance.candidate.user.email,
+            subject=f"Application for {instance.job.title} has been updated",
+            message=f"Your application for the position of {instance.job.title} at {instance.job.employer.company_name} has been updated.",
         )
 
 
