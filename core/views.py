@@ -255,51 +255,55 @@ class JobView(ModelViewSet):
             )
         return super().create(request, *args, **kwargs)
 
-    @action(detail=True, methods=['put', 'patch'])
     def update(self, request, *args, **kwargs):
         """Update job posting (employer only, must own the job)"""
         user = request.user
         if not user.is_employer:
             return Response(
-                {'error': 'Only employers can update job postings'}, 
+                {'error': 'Only employers can update job postings'},
                 status=status.HTTP_403_FORBIDDEN
             )
-        
+
         job = self.get_object()
         if job.employer != user.employer_profile:
             return Response(
-                {'error': 'You can only update your own job postings'}, 
+                {'error': 'You can only update your own job postings'},
                 status=status.HTTP_403_FORBIDDEN
             )
-        serializer = self.get_serializer(job, data=request.data, partial=True)
+
+        partial = request.method == 'PATCH'
+        serializer = self.get_serializer(job, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
         serializer.save()
+
         cache.delete(f'job_{job.id}')
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-    @action(detail=True, methods=['delete'])
-    def destroy(self, request):
+    def destroy(self, request, *args, **kwargs):
         """Delete job posting (employer only, must own the job)"""
         user = request.user
         if not user.is_employer:
             return Response(
-                {'error': 'Only employers can delete job postings'}, 
+                {'error': 'Only employers can delete job postings'},
                 status=status.HTTP_403_FORBIDDEN
             )
-        
+
         job = self.get_object()
         if job.employer != user.employer_profile:
             return Response(
-                {'error': 'You can only delete your own job postings'}, 
+                {'error': 'You can only delete your own job postings'},
                 status=status.HTTP_403_FORBIDDEN
             )
-        
+
+        job_id = job.id
         job.delete()
-        cache.delete(f'job_{job.id}')
+
+        cache.delete(f'job_{job_id}')
         return Response(
             {'message': 'Job deleted successfully'},
-            status=status.HTTP_200_OK
+            status=status.HTTP_204_NO_CONTENT
         )
+
 
     @action(detail=True, methods=['post'], url_path='apply', parser_classes=[MultiPartParser, FormParser])
     def apply(self, request, pk=None):
