@@ -513,9 +513,6 @@ class ApplicationView(ModelViewSet):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
-    
-
-
 
 class NotificationView(ModelViewSet):
     queryset = Notification.objects.all()
