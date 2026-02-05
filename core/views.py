@@ -27,9 +27,10 @@ from .services import (
 from .models import JobPosting, CandidateProfile, EmployerProfile, Notification, Application
 from rest_framework.parsers import MultiPartParser, FormParser
 from .utils import generate_resume_url
+from django.views.decorators.cache import cache_page
 
 
-
+@cache_page(60 * 60)
 class AuthViewSet(GenericViewSet):
 
     def get_permissions(self):
@@ -217,8 +218,7 @@ class AuthViewSet(GenericViewSet):
         serializer.is_valid(raise_exception=True)
         return Response(serializer.validated_data, status=status.HTTP_200_OK)
 
-
-
+@cache_page(60 * 60)
 class JobView(ModelViewSet):
     queryset = JobPosting.objects.all()
     serializer_class = JobPostingSerializer
@@ -342,7 +342,7 @@ class JobView(ModelViewSet):
         )
 
 
-
+@cache_page(60 * 60)
 class ApplicationView(ModelViewSet):
     queryset = Application.objects.all()
     serializer_class = ApplicationSerializer
@@ -407,7 +407,7 @@ class ApplicationView(ModelViewSet):
             )
 
 
-
+@cache_page(60 * 60)
 class NotificationView(ModelViewSet):
     queryset = Notification.objects.all()
     serializer_class = NotificationSerializer
@@ -428,7 +428,7 @@ class NotificationView(ModelViewSet):
         }, status=status.HTTP_200_OK)
 
 
-
+@cache_page(60 * 60)
 class ReviewView(ModelViewSet):
     queryset = CompanyReview.objects.all()
     serializer_class = ReviewSerializer
