@@ -17,10 +17,10 @@ User = get_user_model()
 def create_candidate_or_employer_profile(sender, instance, created, **kwargs):
     if created and instance.is_candidate:
         CandidateProfile.objects.get_or_create(user=instance)
-        Address.objects.get_or_create(user=instance)
+        Address.objects.create(user=instance)
     elif created and instance.is_employer:
         EmployerProfile.objects.get_or_create(user=instance)
-        Address.objects.get_or_create(user=instance)
+        Address.objects.create(user=instance)
 
 
 @receiver(post_save, sender=Application)
