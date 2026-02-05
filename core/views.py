@@ -27,17 +27,11 @@ from .services import (
 from .models import JobPosting, CandidateProfile, EmployerProfile, Notification, Application
 from rest_framework.parsers import MultiPartParser, FormParser
 from .utils import generate_resume_url
-from django.views.decorators.cache import cache_page
+from django.core.cache import cache
 
 
 @cache_page(60 * 60)
 class AuthViewSet(GenericViewSet):
-
-    def get_permissions(self):
-        if self.action in ['login', 'register']:
-            return [AllowAny()]
-        return [IsAuthenticated()]
-
     
     def get_serializer_class(self):
         if self.action == 'login':
@@ -49,135 +43,134 @@ class AuthViewSet(GenericViewSet):
         return LoginSerializer # Default serializer
 
 
-    @action(detail=False, methods=['post'])
+    @action(detail=False, methods=['post'], permission_classes=[AllowAny])
     def login(self, request):
         serializer = self.get_serializer(data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
         user = serializer.validated_data['user']
         access_token = serializer.validated_data['access']
         refresh_token = serializer.validated_data['refresh']
+        cache_key = f"user_login_data:{user.id}"
+        user_data = cache.get(cache_key)
+        if not user_data:
+            user_data = UserSerializer(user).data
+            cache.set(cache_key, user_data, timeout=60 * 60)
+        
         return Response({
-            'user': UserSerializer(user).data,
+            'user': user_data,
             'access': access_token,
             'refresh': refresh_token,
         }, status=status.HTTP_200_OK)
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
     def me(self, request):
         user = request.user
+        cache_key = f"user_login_data:{user.id}"
+        user_data = cache.get(cache_key)
+        if not user_data:
+            user_data = UserSerializer(user).data
+            cache.set(cache_key, user_data, timeout=60 * 60)
         return Response({
-            'user': UserSerializer(user).data,
+            'user': user_data,
         }, status=status.HTTP_200_OK)
 
-    @action(detail=False, methods=['get'])
+
+    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
     def profile(self, request):
         """Get current user's profile"""
         user = request.user
-        
+        cache_key = f"user_profile:{user.id}"
+
+        cached_data = cache.get(cache_key)
+        if cached_data:
+            return Response(cached_data, status=status.HTTP_200_OK)
+
         if user.is_candidate:
             try:
-                profile = CandidateProfile.objects.prefetch_related(
-                    'candidate_skills__skill',
-                    'education',
-                    'certifications'
-                ).get(user=user)
+                profile = (
+                    CandidateProfile.objects
+                    .select_related('user')
+                    .prefetch_related(
+                        'candidate_skills__skill',
+                        'education',
+                        'certifications',
+                        'addresses'
+                    )
+                    .get(user=user)
+                )
                 serializer = CandidateProfileSerializer(profile)
-                return Response(serializer.data, status=status.HTTP_200_OK)
+
             except CandidateProfile.DoesNotExist:
                 return Response(
-                    {'error': 'Candidate profile not found'}, 
+                    {'error': 'Candidate profile not found'},
                     status=status.HTTP_404_NOT_FOUND
                 )
-        
+
         elif user.is_employer:
             try:
                 profile = user.employer_profile
                 serializer = EmployerProfileSerializer(profile)
-                return Response(serializer.data, status=status.HTTP_200_OK)
-            except EmployerProfile.DoesNotExist:
-                return Response(
-                    {'error': 'Employer profile not found'}, 
-                    status=status.HTTP_404_NOT_FOUND
-                )
-        
-        return Response(
-            {'error': 'User role not recognized'}, 
-            status=status.HTTP_400_BAD_REQUEST
-        )
 
-    @action(detail=False, methods=['patch', 'put'], parser_classes=[MultiPartParser, FormParser])
-    def update_profile(self, request):
-        """Update current user's profile"""
-        user = request.user
-        partial = request.method == 'PATCH'
-        
-        if user.is_candidate:
-            try:
-                profile = user.candidate
-                serializer = CandidateProfileSerializer(
-                    instance=profile,
-                    data=request.data,
-                    partial=partial,
-                    context={'request': request}
-                )
-                
-                if serializer.is_valid():
-                    serializer.save()
-                    return Response(serializer.data, status=status.HTTP_200_OK)
-                
-                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-            
-            except CandidateProfile.DoesNotExist:
-                return Response(
-                    {'error': 'Candidate profile not found'}, 
-                    status=status.HTTP_404_NOT_FOUND
-                )
-        
-        elif user.is_employer:
-            try:
-                profile = user.employer_profile  # Fixed: was user.employer
-                serializer = EmployerProfileSerializer(
-                    instance=profile,
-                    data=request.data,
-                    partial=partial,
-                    context={'request': request}
-                )
-                
-                if serializer.is_valid():
-                    serializer.save()
-                    return Response(serializer.data, status=status.HTTP_200_OK)  # Fixed: was 201
-                
-                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)  # Fixed: Added return
-            
             except EmployerProfile.DoesNotExist:
                 return Response(
                     {'error': 'Employer profile not found'},
                     status=status.HTTP_404_NOT_FOUND
                 )
+
+        else:
+            return Response(
+                {'error': 'User role not recognized'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        cache.set(cache_key, serializer.data, timeout=60 * 60)  # 1 hour
+        return Response(serializer.data, status=status.HTTP_200_OK)    
+                
         
-        return Response(
-            {'error': 'User role not recognized'}, 
-            status=status.HTTP_400_BAD_REQUEST
+
+    @action(detail=False, methods=['patch', 'put'], parser_classes=[MultiPartParser, FormParser], permission_classes=[IsAuthenticated])
+    def update_profile(self, request):
+        """Update current user's profile"""
+        user = request.user
+        partial = request.method == 'PATCH'
+        cache_key = f"user_profile:{user.id}"
+
+        if user.is_candidate:
+            model = CandidateProfile
+            serializer_class = CandidateProfileSerializer
+
+        elif user.is_employer:
+            model = EmployerProfile
+            serializer_class = EmployerProfileSerializer
+
+        else:
+            return Response(
+                {'error': 'User role not recognized'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            profile = model.objects.get(user=user)
+        except model.DoesNotExist:
+            return Response(
+                {'error': f'{model.__name__} not found'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        serializer = serializer_class(
+            instance=profile,
+            data=request.data,
+            partial=partial,
+            context={'request': request}
         )
 
-    @action(detail=False, methods=['get'])
-    def applications(self, request):
-        """Get user's applications (candidate's or employer's)"""
-        user = request.user
-        if user.is_candidate:
-            data = ApplicationService.get_candidate_applications(user)
-        elif user.is_employer:
-            data = ApplicationService.get_employer_applications(user)
-        else:
-            data = []
-        return Response(data, status=status.HTTP_200_OK)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
 
-    @action(detail=False, methods=['get'])
-    def notifications(self, request):
-        """Get user's notifications"""
-        user = request.user
-        data = NotificationService.get_notifications(user, limit=None)
-        return Response(data, status=status.HTTP_200_OK)
+        # Invalidate cache after successful update
+        cache.delete(cache_key)
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     @action(detail=False, methods=['get'])
     def reviews(self, request):
@@ -260,56 +253,51 @@ class JobView(ModelViewSet):
             )
         return super().create(request, *args, **kwargs)
 
+    @action(detail=True, methods=['put', 'patch'])
     def update(self, request, *args, **kwargs):
         """Update job posting (employer only, must own the job)"""
-        if not request.user.is_employer:
+        user = request.user
+        if not user.is_employer:
             return Response(
                 {'error': 'Only employers can update job postings'}, 
                 status=status.HTTP_403_FORBIDDEN
             )
         
         job = self.get_object()
-        if job.employer != request.user.employer_profile:
+        if job.employer != user.employer_profile:
             return Response(
                 {'error': 'You can only update your own job postings'}, 
                 status=status.HTTP_403_FORBIDDEN
             )
-        
-        return super().update(request, *args, **kwargs)
+        serializer = self.get_serializer(job, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        cache.delete(f'job_{job.id}')
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
-    def partial_update(self, request, *args, **kwargs):
-        """Partial update job posting (employer only, must own the job)"""
-        if not request.user.is_employer:
-            return Response(
-                {'error': 'Only employers can update job postings'}, 
-                status=status.HTTP_403_FORBIDDEN
-            )
-        
-        job = self.get_object()
-        if job.employer != request.user.employer_profile:
-            return Response(
-                {'error': 'You can only update your own job postings'}, 
-                status=status.HTTP_403_FORBIDDEN
-            )
-        
-        return super().partial_update(request, *args, **kwargs)
-
-    def destroy(self, request, *args, **kwargs):
+    @action(detail=True, methods=['delete'])
+    def destroy(self, request):
         """Delete job posting (employer only, must own the job)"""
-        if not request.user.is_employer:
+        user = request.user
+        if not user.is_employer:
             return Response(
                 {'error': 'Only employers can delete job postings'}, 
                 status=status.HTTP_403_FORBIDDEN
             )
         
         job = self.get_object()
-        if job.employer != request.user.employer_profile:
+        if job.employer != user.employer_profile:
             return Response(
                 {'error': 'You can only delete your own job postings'}, 
                 status=status.HTTP_403_FORBIDDEN
             )
         
-        return super().destroy(request, *args, **kwargs)
+        job.delete()
+        cache.delete(f'job_{job.id}')
+        return Response(
+            {'message': 'Job deleted successfully'},
+            status=status.HTTP_200_OK
+        )
 
     @action(detail=True, methods=['post'], url_path='apply', parser_classes=[MultiPartParser, FormParser])
     def apply(self, request, pk=None):
@@ -361,8 +349,126 @@ class ApplicationView(ModelViewSet):
         
         return self.queryset.none()
 
+    
+    @action(detail=False, methods=['get'])
+    def applications(self, request):
+        """Get user's applications (candidate's or employer's)"""
+        user = request.user
+        cache_key = f"user_applications:{user.id}"
+        cached_data = cache.get(cache_key)
+        if cached_data:
+            return Response(cached_data, status=status.HTTP_200_OK)
+        if user.is_candidate:
+            data = ApplicationService.get_candidate_applications(user)
+        elif user.is_employer:
+            data = ApplicationService.get_employer_applications(user)
+        else:
+            data = []
+        cache.set(cache_key, data, timeout=60 * 60)
+        return Response(data, status=status.HTTP_200_OK)
+
+
+    @action(detail=True, methods=['get'])
+    def view_application(self, request, pk=None):
+        """View a single application (candidate or employer)"""
+        user = request.user
+
+        # Use prefetch_related to optimize related queries
+        application = (
+            Application.objects
+            .prefetch_related(
+                'candidate__user',
+                'job__employer__user'
+            )
+            .get(pk=pk)
+        )
+
+        # Authorization checks
+        if user.is_candidate:
+            if application.candidate.user != user:
+                return Response(
+                    {'error': 'You can only view your own applications'},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+        elif user.is_employer:
+            if application.job.employer.user != user:
+                return Response(
+                    {'error': 'You can only view applications for your own jobs'},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+        else:
+            return Response(
+                {'error': 'You are not authorized to view this application'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        # Cache key
+        cache_key = f"application:{application.id}:user:{user.id}"
+        cached_data = cache.get(cache_key)
+        if cached_data:
+            return Response(cached_data, status=status.HTTP_200_OK)
+
+        # Serialize and cache
+        data = self.get_serializer(application).data
+        cache.set(cache_key, data, timeout=60 * 60)
+
+        return Response(data, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=['post'])
+    def withdraw_application(self, request, pk=None):
+        user = request.user
+        if not user.is_candidate:
+            return Response(
+                {'error': 'Only candidates can withdraw applications'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        application = self.get_object()
+        
+        if application.candidate.user != user:
+            return Response(
+                {'error': 'You can only withdraw your own applications'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        application.status = 'Withdrawn'
+        application.is_withdrawn = True
+        application.save()
+        
+        return Response(
+            {'message': 'Application withdrawn successfully'},
+            status=status.HTTP_200_OK
+        )
+
+    
+    @action(detail=False, methods=['post'])
+    def update_application_status(self, request):
+        user = request.user
+        if not user.is_employer:
+            return Response(
+                {'error': 'Only employers can update application status'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        application = self.get_object()
+        
+        if application.job.employer.user != user:
+            return Response(
+                {'error': 'You can only update the status of applications for your own jobs'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        application.status = request.data.get('status')
+        application.save()
+        
+        return Response(
+            {'message': 'Application status updated successfully'},
+            status=status.HTTP_200_OK
+        )
+    
+
     @action(detail=True, methods=['post'], url_path='download-resume')
-    def download_resume(self, request, pk=None):
+    def download_resume(self, request):
         """Generate signed URL for downloading applicant resume (employer only)"""
         user = request.user
         
@@ -407,7 +513,6 @@ class ApplicationView(ModelViewSet):
             )
 
 
-@cache_page(60 * 60)
 class NotificationView(ModelViewSet):
     queryset = Notification.objects.all()
     serializer_class = NotificationSerializer
@@ -416,6 +521,19 @@ class NotificationView(ModelViewSet):
     def get_queryset(self):
         """Users can only see their own notifications"""
         return self.queryset.filter(user=self.request.user).order_by('-created_at')
+
+    
+    @action(detail=False, methods=['get'])
+    def notifications(self, request):
+        """Get user's notifications"""
+        user = request.user
+        cache_key = f"user_notifications:{user.id}"
+        cached_data = cache.get(cache_key)
+        if cached_data:
+            return Response(cached_data, status=status.HTTP_200_OK)
+        data = NotificationService.get_notifications(user, limit=None)
+        cache.set(cache_key, data, timeout=60 * 60)
+        return Response(data, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=['post'], url_path='mark-read')
     def mark_read(self, request, pk=None):
