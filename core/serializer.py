@@ -452,6 +452,8 @@ class CandidateProfileSerializer(serializers.ModelSerializer):
     picture = serializers.SerializerMethodField(read_only=True)
     resume_url = serializers.SerializerMethodField(read_only=True)
     social_links = serializers.SerializerMethodField(read_only=True)
+    profile_completion = serializers.SerializerMethodField(read_only=True)
+    is_profile_complete = serializers.SerializerMethodField(read_only=True)
     
     # Nested fields for read/write
     skills = CandidateSkillSerializer(many=True, required=False, source='candidate_skills')
@@ -489,13 +491,24 @@ class CandidateProfileSerializer(serializers.ModelSerializer):
             'about': {'required': False},
         }
 
+    def get_profile_completion_percentage(self, obj):
+        """Return the profile completion precentage"""
+        return obj.get_profile_completion_percentage()
+
+    def is_profile_complete(self, obj):
+        """Return True if the profile is completed or False otherwise"""
+        return obj.is_profile_complete()
+
     def get_picture(self, obj):
+        """Gets picture"""
         return obj.profile_picture.url if obj.profile_picture else None
 
     def get_resume_url(self, obj):
+        """Gets resume""""
         return obj.resume.url if obj.resume else None
 
     def get_social_links(self, obj):
+        """Returns the social links"""
         return {
             'linkedin': obj.linkedin or '',
             'github': obj.github or '',
@@ -586,6 +599,8 @@ class EmployerProfileSerializer(serializers.ModelSerializer):
     name = serializers.CharField(source='user.get_full_name', read_only=True)
     email = serializers.EmailField(source='user.email', read_only=True)
     company_logo_url = serializers.SerializerMethodField(read_only=True)
+    profile_completion = serializers.SerializerMethodField(read_only=True)
+    is_profile_complete = serializers.SerializerMethodField(read_only=True)
     
     # Writable fields
     logo = serializers.ImageField(required=False, write_only=True)
@@ -614,6 +629,14 @@ class EmployerProfileSerializer(serializers.ModelSerializer):
     def get_company_logo_url(self, obj):
         """Return company logo URL"""
         return obj.logo.url if obj.logo else None
+
+    def get_profile_completion(self, obj):
+        """Return profile complete percentage"""
+        return obj.get_profile_completion_percentage()
+
+    def is_complete(self, obj):
+        """Return True if profile is complete or False if otherwise"""
+        return obj.is_profile_complete()
 
     def validate_logo(self, value):
         """Validate company logo"""
@@ -648,6 +671,7 @@ class EmployerProfileSerializer(serializers.ModelSerializer):
                 "Please provide a valid LinkedIn URL"
             )
         return value
+
 
     def update(self, instance, validated_data):
         """Update employer profile"""
