@@ -9,6 +9,7 @@ from .models import (
     CompanyReview, JobSkill, Category
 )
 import os
+from django.utils import timezone
 
 
 class UserSerializer(serializers.ModelSerializer):
