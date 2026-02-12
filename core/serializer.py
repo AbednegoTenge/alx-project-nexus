@@ -504,7 +504,7 @@ class CandidateProfileSerializer(serializers.ModelSerializer):
         return obj.profile_picture.url if obj.profile_picture else None
 
     def get_resume_url(self, obj):
-        """Gets resume""""
+        """Gets resume"""
         return obj.resume.url if obj.resume else None
 
     def get_social_links(self, obj):
