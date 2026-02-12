@@ -204,7 +204,7 @@ class Skill(BaseModel):
 
 class CandidateSkill(BaseModel):
     candidate = models.ForeignKey(CandidateProfile, on_delete=models.CASCADE, related_name='candidate_skills')
-    skill = models.ManyToManyField(Skill, on_delete=models.CASCADE, related_name='candidate_skills')
+    skill = models.ManyToManyField(Skill, related_name='candidate_skills')
 
     class Meta:
         verbose_name = _('Candidate Skill')
