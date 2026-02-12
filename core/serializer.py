@@ -170,7 +170,6 @@ class JobPostingSerializer(serializers.ModelSerializer):
     
     # Nested fields for read
     categories = CategorySerializer(many=True, read_only=True)
-    required_skills = JobSkillSerializer(many=True, read_only=True, source='jobskill_set')
     
     # Write-only fields for creating/updating
     category_ids = serializers.ListField(
@@ -178,7 +177,7 @@ class JobPostingSerializer(serializers.ModelSerializer):
         write_only=True,
         required=False
     )
-    skills = JobSkillSerializer(many=True, write_only=True, required=False)
+    skills = SkillSerializer(many=True, write_only=True, required=False)
     
     class Meta:
         model = JobPosting
