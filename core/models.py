@@ -282,23 +282,23 @@ class EmployerProfile(BaseModel):
         """Gets the profile completion of the employer"""
 
         profile_fields = [
-            ('User': self.user),
-            ('company': self.company_name),
-            ('size': self.company_size),
-            ('industry': self.industry),
-            ('founded_year': self.founded_year),
-            ('logo': self.logo),
-            ('cover_image': self.cover_image),
-            ('description': self.description),
-            ('website_url': self.website_url),
-            ('linkedin_url': self.linkedin_url),
-            ('address': self.headquarters_address),
-            ('state': self.state),
-            ('city': self.city),
-            ('country': self.country),
-            ('postal_code': self.postal_code),
-            ('phone': self.phone),
-            ('email': self.contact_email)
+            ('User', self.user),
+            ('company', self.company_name),
+            ('size', self.company_size),
+            ('industry', self.industry),
+            ('founded_year', self.founded_year),
+            ('logo', self.logo),
+            ('cover_image', self.cover_image),
+            ('description', self.description),
+            ('website_url', self.website_url),
+            ('linkedin_url', self.linkedin_url),
+            ('address', self.headquarters_address),
+            ('state', self.state),
+            ('city', self.city),
+            ('country', self.country),
+            ('postal_code', self.postal_code),
+            ('phone', self.phone),
+            ('email', self.contact_email)
         ]
 
         total_fields = len(profile_fields)
